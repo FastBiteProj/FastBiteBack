@@ -1,0 +1,6 @@
+@FastBite_HostAddress = http://localhost:5296
+
+GET {{FastBite_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

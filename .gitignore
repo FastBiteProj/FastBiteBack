@@ -1,0 +1,72 @@
+# Compiled binary files
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build files
+*.exe
+*.dll
+*.pdb
+*.log
+*.cache
+*.manifest
+
+# VS Code settings
+.vscode/
+
+# Visual Studio specific
+.vs/
+
+# Package dependencies
+packages/
+!packages/repositories.config
+
+# NuGet dependencies
+*.nupkg
+project.lock.json
+global.json
+
+# Logs and debug files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Publish artifacts
+wwwroot/
+app.publish/
+*.Publish.xml
+
+# Database files
+*.mdf
+*.ldf
+*.sqlite
+
+# Entity Framework Migrations
+Migrations/
+
+# Secrets and configurations
+secrets.json
+appsettings.Development.json
+appsettings.Local.json
+
+# Rider and JetBrains settings
+.idea/
+*.sln.iml
+
+# Resharper and other JetBrains IDE files
+*.DotSettings
+*.DotSettings.user
+
+# OS-specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
