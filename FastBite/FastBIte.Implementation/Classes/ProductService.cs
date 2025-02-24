@@ -9,6 +9,7 @@ using FastBite.Core.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using StackExchange.Redis;
 
 namespace FastBite.Implementation.Classes;
 
@@ -19,14 +20,19 @@ public class ProductService : IProductService
     private readonly IConfiguration _config;
      private readonly BlobServiceClient _blobServiceClient;
     private readonly BlobContainerClient _containerClient;
+    private readonly IConnectionMultiplexer _redis;
+    private readonly IDatabase _db;
 
-    public ProductService(FastBiteContext context, IConfiguration config)
+
+    public ProductService(FastBiteContext context, IConfiguration config, IConnectionMultiplexer redis)
     {
         _context = context;
         _config = config;
         mapper = MappingConfiguration.InitializeConfig();
         _blobServiceClient = new BlobServiceClient(_config["BlobConnection:ConnectionString"]);
         _containerClient = _blobServiceClient.GetBlobContainerClient(_config["BlobConnection:ContainerName"]);
+        _redis = redis;
+        _db = _redis.GetDatabase();
     }
 
     public async Task<List<ProductDTO>> GetAllProductsAsync()
@@ -35,6 +41,62 @@ public class ProductService : IProductService
         .Include(p => p.Translations)
         .ToListAsync(); 
         return mapper.Map<List<ProductDTO>>(res);
+    }
+
+    public async Task AddProductToCartAsync(string userId, Guid productId)
+    {
+        var cartKey = $"cart:{userId}";
+        var product = await _context.Products.FindAsync(productId);
+
+        if (product == null)
+        {
+            throw new Exception("Product not found.");
+        }
+
+        await _db.ListLeftPushAsync(cartKey, productId.ToString());
+    }
+
+    public async Task<List<ProductDTO>> GetUserCartAsync(string userId)
+    {
+        var cartKey = $"cart:{userId}";
+        var productIds = await _db.ListRangeAsync(cartKey);
+
+        var products = new List<ProductDTO>();
+
+        foreach (var productId in productIds)
+        {
+            var product = await _context.Products.Include(p => p.Category)
+                                                  .Include(p => p.Translations)
+                                                  .FirstOrDefaultAsync(p => p.Id == Guid.Parse(productId));
+            if (product != null)
+            {
+                products.Add(mapper.Map<ProductDTO>(product));
+            }
+        }
+
+        return products;
+    }
+    
+    public async Task RemoveProductFromCartAsync(string userId, Guid productId)
+    { 
+        string cartKey = $"cart:{userId}";
+
+        var result = await _db.ListRemoveAsync(cartKey, productId.ToString());
+
+        if (result == 0)
+        {
+            throw new Exception("Product not found in the cart.");
+        }
+
+        Console.WriteLine($"Product {productId} removed from cart.");
+    }
+    public async Task ClearCartAsync(string userId)
+    {
+        string cartKey = $"cart:{userId}";
+
+        await _db.KeyDeleteAsync(cartKey);
+
+        Console.WriteLine("Cart has been cleared.");
     }
 
     public async Task<ProductDTO> AddNewProductAsync(ProductDTO productDto, CancellationToken cancellationToken)
@@ -108,7 +170,7 @@ public class ProductService : IProductService
             if (await Task.WhenAny(uploadTask, Task.Delay(TimeSpan.FromSeconds(15), cancellationToken)) == uploadTask)
             {
                 await uploadTask; 
-                return blobClient.Uri.ToString(); // Возвращаем только URL
+                return blobClient.Uri.ToString();
             }
             else
             {   

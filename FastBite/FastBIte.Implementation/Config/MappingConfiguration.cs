@@ -138,6 +138,7 @@ namespace FastBite.Implementation.Configs
 
                 cfg.CreateMap<Product, ProductDTO>()
                     .ConstructUsing(src => new ProductDTO(
+                        src.Id,
                         src.Category != null ? src.Category.Name : "Unknown Category",
                         src.ImageUrl,
                         src.Price,
@@ -147,6 +148,7 @@ namespace FastBite.Implementation.Configs
                                 t.Name,
                                 t.Description)).ToList()
                             : new List<ProductTranslationDto>()))
+                    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                     .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
                     .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
                     .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
@@ -155,6 +157,7 @@ namespace FastBite.Implementation.Configs
                         t.Name,
                         t.Description)).ToList()))
                     .ReverseMap()
+                    .ForMember(dest => dest.Id, opt => opt.Ignore())
                     .ForMember(dest => dest.Category, opt => opt.Ignore())
                     .ForMember(dest => dest.CategoryId, opt => opt.Ignore())
                     .ForMember(dest => dest.OrderItems, opt => opt.Ignore())

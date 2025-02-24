@@ -16,7 +16,7 @@ public class ReservationService : IReservationService
     public IOrderService _orderService;
     private readonly IMapper mapper;
 
-    public ReservationService(FastBiteContext context, ITokenService tokenService, IOrderService orderService) // Constructor for initialization
+    public ReservationService(FastBiteContext context, ITokenService tokenService, IOrderService orderService) 
     {
         _context = context;
         mapper = MappingConfiguration.InitializeConfig();
@@ -24,7 +24,7 @@ public class ReservationService : IReservationService
         _orderService = orderService;
     }
 
-    public async Task<ReservationDTO> CreateReservationAsync(ReservationDTO reservation) //Method for Create Reservation
+    public async Task<ReservationDTO> CreateReservationAsync(ReservationDTO reservation) 
     {
         Table table = null;
         var requestedStart = TimeOnly.Parse(reservation.ReservationStartTime);
@@ -56,7 +56,7 @@ public class ReservationService : IReservationService
             throw new Exception("Table has reached maximum reservations for this day");
         }
 
-        bool hasTimeConflict = existingReservations.Any(r => // Checking Time Conflict for all reservation on Selected Table
+        bool hasTimeConflict = existingReservations.Any(r =>
             (requestedStart >= r.ReservationStart && requestedStart < r.ReservationEnd) ||
             (requestedEnd > r.ReservationStart && requestedEnd <= r.ReservationEnd) ||
             (requestedStart <= r.ReservationStart && requestedEnd >= r.ReservationEnd)
@@ -75,7 +75,7 @@ public class ReservationService : IReservationService
             orderId = order?.Id;
         }
 
-        var newReservation = new Reservation // Create Reservation object of Class Reservation for database
+        var newReservation = new Reservation
         {
             ReservationStart = requestedStart,
             ReservationEnd = requestedEnd,

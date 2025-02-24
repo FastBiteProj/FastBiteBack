@@ -12,6 +12,8 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using FastBite.Infrastructure.Hubs;
 
 namespace FastBite.Implementation.Classes
 {

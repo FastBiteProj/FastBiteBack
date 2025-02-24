@@ -14,6 +14,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using FastBite.Presentation.Middlewares;
+using Microsoft.AspNetCore.SignalR;
+using FastBite.Infrastructure.Hubs;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +39,7 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
 });
 
+builder.Services.AddSignalR();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -74,16 +78,12 @@ builder.Services.AddAuthentication(options =>
             if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
             {
                 var httpContext = context.HttpContext;
-                var accessToken = 
-                    httpContext.Request.Cookies["accessToken"];
-
-                var refreshToken =
-                    httpContext.Request.Cookies["refreshToken"];
+                var accessToken = httpContext.Request.Cookies["accessToken"];
+                var refreshToken = httpContext.Request.Cookies["refreshToken"];
 
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
-                    var refreshEndpoint =
-                        $"http://localhost:5156/api/v1/Auth/Refresh";
+                    var refreshEndpoint = $"http://localhost:5156/api/v1/Auth/Refresh";
                     var client = httpContext.RequestServices.GetRequiredService<IHttpClientFactory>().CreateClient();
                     
                     var response = await client.PostAsJsonAsync(refreshEndpoint, new TokenDTO(accessToken, refreshToken));
@@ -150,6 +150,8 @@ builder.Services.AddScoped<LoginUserValidator>();
 builder.Services.AddScoped<RegisterUserValidator>();
 builder.Services.AddScoped<ResetPasswordValidator>();
 
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(builder.Configuration["Redis:RedisConnection"]));
+
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddTransient<IRecaptchaService, RecaptchaService>();
 builder.Services.AddTransient<ITableService, TableService>();
@@ -161,18 +163,13 @@ builder.Services.AddTransient<IProductService, ProductService>();
 builder.Services.AddTransient<IOrderService, OrderService>();
 builder.Services.AddTransient<ICategoryService, CategoryService>();
 
-
-
-
 builder.Services.AddTransient<IAccountService, AccountService>();
 
 builder.Services.AddScoped<IBlackListService, BlackListService>();
 builder.Services.AddScoped<JwtSessionMiddleware>();
 builder.Services.AddSingleton<IEmailSender, EmailSender>();
 
-
 var app = builder.Build();
-
 
 app.UseCors("CorsPolicy");
 
@@ -190,6 +187,7 @@ app.Use(async (context, next) =>
 });
 
 app.UseHttpsRedirection();
+app.UseRouting();
 app.UseMiddleware<JwtSessionMiddleware>();
 
 app.UseAuthentication();
@@ -197,5 +195,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run("http://localhost:5156");
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapHub<OrderHub>("/orderHub");
+});
 
+app.Run("http://localhost:5156");
