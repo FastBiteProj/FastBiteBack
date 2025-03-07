@@ -13,7 +13,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
-using FastBite.Infrastructure.Hubs;
+using FastBite.Infastructure.Hubs;
 
 namespace FastBite.Implementation.Classes
 {

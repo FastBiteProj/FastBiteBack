@@ -60,7 +60,7 @@ namespace FastBite.Implementation.Configs
                     .ForMember(dest => dest.ReservationStartTime, opt => opt.MapFrom(src => src.ReservationStart))
                     .ForMember(dest => dest.ReservationEndTime, opt => opt.MapFrom(src => src.ReservationEnd))
                     .ForMember(dest => dest.ReservationDate, opt => opt.MapFrom(src => src.ReservationDate))
-                    .ForMember(dest => dest.GuestCount, opt => opt.MapFrom(src => src.Table.Capacity))
+                    .ForMember(dest => dest.GuestCount, opt => opt.MapFrom(src => src.GuestCount))
                     .ForMember(dest => dest.TableNumber, opt => opt.MapFrom(src => src.Table.Number))
                     .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
                     .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order != null ? new CreateOrderDTO(

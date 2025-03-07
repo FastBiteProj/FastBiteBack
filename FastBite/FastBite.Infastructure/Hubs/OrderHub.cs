@@ -1,20 +1,11 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 
-namespace FastBite.Infrastructure.Hubs
+namespace FastBite.Infastructure.Hubs;
+public class CartHub : Hub
 {
-    public class OrderHub : Hub
+    public async Task NotifyCartUpdated(string userId)
     {
-        public override async Task OnConnectedAsync()
-        {
-            Console.WriteLine("🚀 Соединение установлено");
-            await base.OnConnectedAsync();
-        }
-
-        public override async Task OnDisconnectedAsync(Exception exception)
-        {
-            Console.WriteLine("❌ Соединение разорвано: " + exception?.Message);
-            await base.OnDisconnectedAsync(exception);
-        }
+        await Clients.All.SendAsync("CartUpdated", userId);
     }
 }

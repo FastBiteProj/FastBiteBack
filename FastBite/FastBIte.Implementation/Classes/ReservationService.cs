@@ -90,10 +90,10 @@ public class ReservationService : IReservationService
         table.Reservations ??= new List<Reservation>();
         table.Reservations.Add(newReservation);
 
-        _context.Reservations.Add(newReservation); // Adding newReservation object to Database
+        _context.Reservations.Add(newReservation); 
         _context.Tables.Update(table);
 
-        await _context.SaveChangesAsync(); // SaveChanges() to Save all new data
+        await _context.SaveChangesAsync(); 
         return mapper.Map<ReservationDTO>(newReservation);
     }
 
@@ -145,7 +145,7 @@ public class ReservationService : IReservationService
         _context.Reservations.Update(currentReservation);
         await _context.SaveChangesAsync();
 
-        return mapper.Map<ReservationDTO>(currentReservation); // Returning mapped model table
+        return mapper.Map<ReservationDTO>(currentReservation);
     }
 
     public async Task<List<ReservationDTO>> GetAllReservationsAsync(string token) // Get All reservations without id and for each user
@@ -159,7 +159,7 @@ public class ReservationService : IReservationService
         query = await Functions.GetFilteredDataByUserRoleAsync(user, query, _context);
 
         var reservations = await query
-            .Include(r => r.Table) 
+            .Include(r => r.Table)
             .Include(r => r.Order)
                 .ThenInclude(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)

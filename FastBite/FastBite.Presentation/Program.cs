@@ -13,9 +13,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using FastBite.Infastructure.Hubs;
 using FastBite.Presentation.Middlewares;
 using Microsoft.AspNetCore.SignalR;
-using FastBite.Infrastructure.Hubs;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -197,7 +197,7 @@ app.MapControllers();
 
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapHub<OrderHub>("/orderHub");
+    endpoints.MapHub<CartHub>("/orderHub");
 });
 
 app.Run("http://localhost:5156");

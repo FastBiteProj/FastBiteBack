@@ -8,5 +8,6 @@ public record AccessInfoDTO
      string AccessToken ,
      string RefreshToken ,
      DateTime RefreshTokenExpireTime,
-     string Role
+     string Role,
+     List<ProductDTO> CartItems
 );

@@ -8,6 +8,7 @@ using System.Security.Claims;
 using static BCrypt.Net.BCrypt;
 using AutoMapper;
 using FastBite.Implementation.Configs;
+using StackExchange.Redis;
 
 namespace FastBite.Implementation.Classes;
 
@@ -17,12 +18,17 @@ public class AuthService : IAuthService
     private readonly ITokenService tokenService;
     private readonly IBlackListService blackListService;
     private readonly IMapper mapper;
-    public AuthService(FastBiteContext context, ITokenService tokenService, IBlackListService blackListService, IEmailSender emailSender)
+    private readonly IConnectionMultiplexer _redis;
+    private readonly IDatabase _db;
+
+    public AuthService(FastBiteContext context, ITokenService tokenService, IBlackListService blackListService, IConnectionMultiplexer redis)
     {
         this.context = context;
         this.tokenService = tokenService;
         this.blackListService = blackListService;
         mapper = MappingConfiguration.InitializeConfig();
+        _redis = redis;
+        _db = _redis.GetDatabase();
     }
 
     public async Task<AccessInfoDTO> LoginUserAsync(LoginDTO user)
@@ -45,8 +51,24 @@ public class AuthService : IAuthService
             }
 
             var userRoles = foundUser.UserRoles.Select(ur => ur.AppRole.Name).ToList();
-            
             string userRole = userRoles.Contains("AppAdmin") ? "AppAdmin" : "AppUser";
+
+            var cartKey = $"cart:{foundUser.Id}";
+            var productIds = await _db.ListRangeAsync(cartKey);
+            var cartProducts = new List<ProductDTO>();
+
+            foreach (var productId in productIds)
+            {
+                var product = await context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.Translations)
+                    .FirstOrDefaultAsync(p => p.Id == Guid.Parse(productId));
+
+                if (product != null)
+                {
+                    cartProducts.Add(mapper.Map<ProductDTO>(product));
+                }
+            }
 
             var tokenData = new AccessInfoDTO(
                 foundUser.Id.ToString(),
@@ -55,7 +77,8 @@ public class AuthService : IAuthService
                 await tokenService.GenerateTokenAsync(foundUser),
                 await tokenService.GenerateRefreshTokenAsync(),
                 DateTime.Now.AddMinutes(5),
-                userRole
+                userRole,
+                cartProducts
             );
 
             foundUser.RefreshToken = tokenData.RefreshToken;
@@ -98,17 +121,15 @@ public class AuthService : IAuthService
         var refreshToken = userAccessData.RefreshToken;
 
         var principal = tokenService.GetPrincipalFromToken(accessToken);
-
         var email = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
 
-        var user = context.Users.FirstOrDefault(u => u.Email == email);
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+            throw new MyAuthException(AuthErrorTypes.InvalidRequest, "Invalid client request");
 
         var userRole = await context.UserRoles
             .Include(r => r.AppRole)
             .FirstOrDefaultAsync(r => r.UserId == user.Id);
-
-        if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
-            throw new MyAuthException(AuthErrorTypes.InvalidRequest, "Invalid client request");
 
         var newAccessToken = await tokenService.GenerateTokenAsync(user);
         var newRefreshToken = await tokenService.GenerateRefreshTokenAsync();
@@ -118,6 +139,22 @@ public class AuthService : IAuthService
 
         await context.SaveChangesAsync();
 
+        var cartKey = $"cart:{user.Id}";
+        var productIds = await _db.ListRangeAsync(cartKey);
+        var cartProducts = new List<ProductDTO>();
+
+        foreach (var productId in productIds)
+        {
+            var product = await context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Translations)
+                .FirstOrDefaultAsync(p => p.Id == Guid.Parse(productId));
+
+            if (product != null)
+            {
+                cartProducts.Add(mapper.Map<ProductDTO>(product));
+            }
+        }
 
         return new AccessInfoDTO(
             user.Id.ToString(),
@@ -126,7 +163,8 @@ public class AuthService : IAuthService
             newAccessToken,
             newRefreshToken,
             DateTime.Now.AddMinutes(5),
-            userRole.AppRole.Name
+            userRole.AppRole.Name,
+            cartProducts // Добавляем корзину в DTO
         );
     }
 
