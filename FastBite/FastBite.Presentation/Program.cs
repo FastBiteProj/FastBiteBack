@@ -157,6 +157,8 @@ builder.Services.AddTransient<IRecaptchaService, RecaptchaService>();
 builder.Services.AddTransient<ITableService, TableService>();
 builder.Services.AddTransient<ICheckoutService, CheckoutService>();
 builder.Services.AddTransient<IAuthService, AuthService>();
+builder.Services.AddTransient<IPartyService, PartyService>();
+builder.Services.AddTransient<IRedisService, RedisService>();
 builder.Services.AddTransient<IRoleService, RoleService>();
 builder.Services.AddTransient<IReservationService, ReservationService>();
 builder.Services.AddTransient<IProductService, ProductService>();

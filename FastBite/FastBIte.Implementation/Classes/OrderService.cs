@@ -57,7 +57,6 @@ namespace FastBite.Implementation.Classes
                 OrderItems = new List<OrderItem>(),
                 ConfirmationDate = DateTime.Now,
                 TableNumber = orderDTO.TableNumber
-                
             };
 
             foreach (var item in orderDTO.ProductNames)

@@ -7,7 +7,7 @@ public interface IProductService
 {
     Task<List<ProductDTO>> GetAllProductsAsync();
     Task AddProductToCartAsync(string userId, Guid productId);
-    Task<CartDTO> GetUserCartAsync(string userId);
+    Task<List<ProductDTO>> GetUserCartAsync(string userId);
     Task RemoveProductFromCartAsync(string userid, Guid productId);
     Task ClearCartAsync(string userId);
     Task<ProductDTO> AddNewProductAsync(ProductDTO product, CancellationToken cancellationToken);

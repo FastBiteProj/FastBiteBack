@@ -61,57 +61,54 @@ public class ProductService : IProductService
         await _db.StringSetAsync(expirationKey, expirationTime.ToString("o"), TimeSpan.FromMinutes(30)); 
     }
 
-    public async Task<CartDTO> GetUserCartAsync(string userId)
+    public async Task<List<ProductDTO>> GetUserCartAsync(string userId)
     {
         var cartKey = $"cart:{userId}";
-        var expirationKey = $"{cartKey}:expiration";
-
         var productIds = await _db.ListRangeAsync(cartKey);
-
-        if (productIds.Length == 0)
-            return new CartDTO { Items = new List<ProductDTO>(), ExpirationTime = null };
-
-        var productGuids = productIds.Select(id => Guid.Parse(id.ToString())).ToList();
-
-        var products = await _context.Products
-            .Where(p => productGuids.Contains(p.Id))
-            .Include(p => p.Category)
-            .Include(p => p.Translations)
-            .ToListAsync();
-
-        var expirationTimeStr = await _db.StringGetAsync(expirationKey);
-        DateTime? expirationTime = expirationTimeStr.HasValue
-            ? DateTime.Parse(expirationTimeStr.ToString())
-            : null;
-
-        return new CartDTO
+    
+        var products = new List<ProductDTO>();
+    
+        foreach (var productId in productIds)
         {
-            Items = mapper.Map<List<ProductDTO>>(products),
-            ExpirationTime = expirationTime
-        };
+            var product = await _context.Products.Include(p => p.Category)
+                .Include(p => p.Translations)
+                .FirstOrDefaultAsync(p => p.Id == Guid.Parse(productId));
+            if (product != null)
+            {
+                products.Add(mapper.Map<ProductDTO>(product));
+            }
+        }
+    
+        return products;
     }
+    
+    
+
+
+    
     
     public async Task RemoveProductFromCartAsync(string userId, Guid productId)
     { 
         string cartKey = $"cart:{userId}";
-
+    
         var result = await _db.ListRemoveAsync(cartKey, productId.ToString());
-
+    
         if (result == 0)
         {
             throw new Exception("Product not found in the cart.");
         }
-
+    
         Console.WriteLine($"Product {productId} removed from cart.");
     }
     public async Task ClearCartAsync(string userId)
     {
         string cartKey = $"cart:{userId}";
-
+    
         await _db.KeyDeleteAsync(cartKey);
-
+    
         Console.WriteLine("Cart has been cleared.");
     }
+
 
     public async Task<ProductDTO> AddNewProductAsync(ProductDTO productDto, CancellationToken cancellationToken)
     {
