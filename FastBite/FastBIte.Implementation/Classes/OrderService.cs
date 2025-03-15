@@ -163,9 +163,8 @@ namespace FastBite.Implementation.Classes
                 
                 _context.Orders.Update(order);
                 await _context.SaveChangesAsync();
+                return _mapper.Map<CreateOrderDTO>(order);
 
-                var updatedOrderDTO = _mapper.Map<CreateOrderDTO>(order);
-                return updatedOrderDTO;
             }
             catch (Exception ex)
             {

@@ -8,5 +8,5 @@ public class PartyDTO {
     public int TableId { get; set; }
     public Guid OwnerId { get; set; }
     public List<Guid> MemberIds { get; set; }
-    public List<OrderItemDTO> OrderItems { get; set; } = new();
+    public List<Guid> OrderItems { get; set; } = new();
 };

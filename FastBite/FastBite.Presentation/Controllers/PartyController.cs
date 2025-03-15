@@ -79,5 +79,18 @@ public class PartyController : ControllerBase
         var products = await _partyService.GetPartyCartAsync(partyId);
         return Ok(products);
     }
+    [HttpPost("removeFromPartyCart")]
+    public async Task<IActionResult> RemoveFromPartyCart([FromBody] RemoveFromPartyCartDTO request)
+    {
+        await _partyService.RemoveProductFromPartyCartAsync(request.PartyId, request.ProductId);
+        return Ok(new { message = "Продукт удален из корзины пати" });
+    }
+
+    [HttpPost("clearPartyCart")]
+    public async Task<IActionResult> ClearPartyCart([FromBody] ClearPartyCartDTO request)
+    {
+        await _partyService.ClearPartyCartAsync(request.PartyId);
+        return Ok(new { message = "Корзина пати очищена" });
+    }
 
 }

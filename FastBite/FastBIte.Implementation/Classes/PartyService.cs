@@ -89,7 +89,7 @@ public class PartyService : IPartyService
 
         partyData.MemberIds.Remove(userId);
 
-        if (partyData.MemberIds.Count == 0)
+        if (partyData.MemberIds.Count == 1)
         {
             await _redis.KeyDeleteAsync(partyId.ToString());
             Console.WriteLine($"Party {partyId} deleted from Redis.");
@@ -106,7 +106,18 @@ public class PartyService : IPartyService
     
     public async Task<PartyDTO?> GetPartyAsync(Guid partyId)
     {
-        return await _redisService.GetAsync<PartyDTO>(partyId);
+        var party = await _redisService.GetAsync<PartyDTO>(partyId);
+        if (party == null)
+        {
+            return null;
+        }
+
+        var cartKey = $"party_cart:{partyId}";
+        var productIds = await _redis.ListRangeAsync(cartKey);
+
+        party.OrderItems = productIds.Select(id => Guid.Parse(id.ToString())).ToList();
+
+        return party;
     }
     
     public async Task AddProductToPartyCartAsync(Guid partyId, Guid productId)
@@ -135,5 +146,31 @@ public class PartyService : IPartyService
             }
         }
         return products;
+    }
+    
+    public async Task RemoveProductFromPartyCartAsync(Guid partyId, Guid productId)
+    {
+        var cartKey = $"party_cart:{partyId}";
+
+        var exists = await _redis.KeyExistsAsync(cartKey);
+        if (!exists)
+        {
+            throw new Exception("Party cart not found.");
+        }
+
+        await _redis.ListRemoveAsync(cartKey, productId.ToString(), 1);
+
+        var remainingItems = await _redis.ListLengthAsync(cartKey);
+        if (remainingItems > 0)
+        {
+            await _redis.KeyExpireAsync(cartKey, TimeSpan.FromMinutes(15));
+        }
+    }
+
+    public async Task ClearPartyCartAsync(Guid partyId)
+    {
+        var cartKey = $"party_cart:{partyId}";
+
+        await _redis.KeyDeleteAsync(cartKey);
     }
 }

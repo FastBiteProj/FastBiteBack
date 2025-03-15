@@ -116,7 +116,7 @@ public class ReservationService : IReservationService
         await _context.SaveChangesAsync();
     }
 
-    public async Task<ReservationDTO> EditReservation(Guid Id, ReservationDTO reservation) // Edit Reservation with Id for AppAdminUser
+    public async Task<ReservationDTO> EditReservation(Guid Id, ReservationDTO reservation) 
     {
         var currentReservation = await _context.Reservations
             .Include(r => r.Table)
@@ -124,7 +124,7 @@ public class ReservationService : IReservationService
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Id == Id);
 
-        if (currentReservation == null) // Check and throw new KeyNotFoundException("Reservation not found");
+        if (currentReservation == null) 
         {
             throw new Exception("Reservation not found");
         }

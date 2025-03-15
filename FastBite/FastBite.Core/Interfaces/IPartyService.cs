@@ -10,4 +10,6 @@ public interface IPartyService
     public Task<PartyDTO?> GetPartyAsync(Guid partyId);
     public Task<List<ProductDTO>> GetPartyCartAsync(Guid partyId);
     public Task AddProductToPartyCartAsync(Guid partyId, Guid productId);
+    public Task RemoveProductFromPartyCartAsync(Guid partyId, Guid productId);
+    public Task ClearPartyCartAsync(Guid partyId);
 }
