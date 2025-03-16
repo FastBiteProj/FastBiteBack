@@ -52,6 +52,7 @@ namespace FastBite.Implementation.Classes
 
             var order = new Order
             {
+                Id = Guid.NewGuid(),
                 UserId = orderDTO.UserId,
                 TotalPrice = 0,
                 OrderItems = new List<OrderItem>(),

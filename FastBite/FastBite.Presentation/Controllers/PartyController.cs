@@ -25,9 +25,15 @@ public class PartyController : ControllerBase
             return BadRequest("Owner id is required and cannot be empty or Table Id is invalid");
         }
 
-        var partyId = await _partyService.CreatePartyAsync(partyRequest.OwnerId, partyRequest.TableId);
-        
-        return Ok(partyId);
+        try 
+        {
+            var partyId = await _partyService.CreatePartyAsync(partyRequest.OwnerId, partyRequest.TableId);
+            return Ok(partyId);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
 

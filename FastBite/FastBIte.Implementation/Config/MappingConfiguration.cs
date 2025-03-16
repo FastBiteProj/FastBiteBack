@@ -63,25 +63,12 @@ namespace FastBite.Implementation.Configs
                     .ForMember(dest => dest.GuestCount, opt => opt.MapFrom(src => src.GuestCount))
                     .ForMember(dest => dest.TableNumber, opt => opt.MapFrom(src => src.Table.Number))
                     .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
-                    .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order != null ? new CreateOrderDTO(
-                        src.Order.Id, 
-                        src.Order.OrderItems.Select(oi => new OrderProductDTO(
-                            oi.Product.Translations
-                                .Where(t => t.LanguageCode == "en")
-                                .Select(t => t.Name)
-                                .FirstOrDefault() ?? "Unknown Product",
-                            oi.Quantity)).ToList(),
-                        src.Order.UserId,
-                        src.Order.TotalPrice,
-                        src.Order.TableNumber,
-                        src.Order.ConfirmationDate) : null))
                     .ReverseMap()
                     .ForMember(dest => dest.ReservationStart, opt => opt.MapFrom(src => TimeOnly.Parse(src.ReservationStartTime)))
                     .ForMember(dest => dest.ReservationEnd, opt => opt.MapFrom(src => TimeOnly.Parse(src.ReservationEndTime)))
                     .ForMember(dest => dest.ReservationDate, opt => opt.MapFrom(src => DateOnly.Parse(src.ReservationDate)))
                     .ForMember(dest => dest.Table, opt => opt.Ignore())
                     .ForMember(dest => dest.User, opt => opt.Ignore())
-                    .ForMember(dest => dest.Order, opt => opt.Ignore())
                     .ForMember(dest => dest.TableId, opt => opt.Ignore())
                     .ForMember(dest => dest.OrderId, opt => opt.Ignore())
                     .ForMember(dest => dest.ConfirmationDate, opt => opt.Ignore());

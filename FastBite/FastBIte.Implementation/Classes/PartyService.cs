@@ -26,8 +26,19 @@ public class PartyService : IPartyService
 
     public async Task<Guid> CreatePartyAsync(Guid ownerId, int tableId)
     {
+        // Check if there's already a party for this table
+        var allKeys = _redis.Multiplexer.GetServer(_redis.Multiplexer.GetEndPoints()[0]).Keys();
+        foreach (var i in allKeys)
+        {
+            var partyData = await _redisService.GetAsync<PartyDTO>(Guid.Parse(i.ToString()));
+            if (partyData != null && partyData.TableId == tableId)
+            {
+                throw new Exception($"Table {tableId} already has an active party");
+            }
+        }
+
         Guid partyId = Guid.NewGuid();
-        var partyData = new PartyDTO
+        var newPartyData = new PartyDTO
         {
             PartyId = partyId,
             TableId = tableId,
@@ -36,7 +47,7 @@ public class PartyService : IPartyService
         };
 
         string key = $"{partyId}";
-        string jsonData = JsonSerializer.Serialize(partyData);
+        string jsonData = JsonSerializer.Serialize(newPartyData);
     
         await _redis.StringSetAsync(key, jsonData);
         
@@ -89,7 +100,7 @@ public class PartyService : IPartyService
 
         partyData.MemberIds.Remove(userId);
 
-        if (partyData.MemberIds.Count == 1)
+        if (partyData.MemberIds.Count == 0)
         {
             await _redis.KeyDeleteAsync(partyId.ToString());
             Console.WriteLine($"Party {partyId} deleted from Redis.");

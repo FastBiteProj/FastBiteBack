@@ -22,7 +22,6 @@ public class CartController : ControllerBase
         try
         {
             var products = await _productService.GetUserCartAsync(userId);
-
             return Ok(products);
         }
         catch (Exception ex)
@@ -34,24 +33,72 @@ public class CartController : ControllerBase
     [HttpPost("addProductsToCart")]
     public async Task<IActionResult> AddProductToCart([FromBody] CartRequestDTO request)
     {
-        await _productService.AddProductToCartAsync(request.UserId, request.ProductId);
-        await _hubContext.Clients.All.SendAsync("CartUpdated", request.UserId);
-        return Ok("Product added to cart");
+        try 
+        {
+            if (request.PartyId.HasValue)
+            {
+                await _productService.AddProductToCartAsync(request.UserId, request.ProductId);
+                await _hubContext.Clients.Group(request.PartyId.Value.ToString()).SendAsync("PartyCartUpdated", request.PartyId.Value);
+                return Ok("Product added to party cart");
+            }
+            else
+            {
+                await _productService.AddProductToCartAsync(request.UserId, request.ProductId);
+                await _hubContext.Clients.All.SendAsync("CartUpdated", request.UserId);
+                return Ok("Product added to personal cart");
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error adding product to cart", error = ex.Message });
+        }
     }
 
     [HttpDelete("removeFromCart")]
     public async Task<IActionResult> RemoveProductFromCart([FromBody] CartRequestDTO request)
     {
-        await _productService.RemoveProductFromCartAsync(request.UserId, request.ProductId);
-        await _hubContext.Clients.All.SendAsync("CartUpdated", request.UserId);
-        return Ok("Product removed from cart");
+        try
+        {
+            if (request.PartyId.HasValue)
+            {
+                await _productService.RemoveProductFromCartAsync(request.UserId, request.ProductId);
+                await _hubContext.Clients.Group(request.PartyId.Value.ToString()).SendAsync("PartyCartUpdated", request.PartyId.Value);
+                return Ok("Product removed from party cart");
+            }
+            else
+            {
+                await _productService.RemoveProductFromCartAsync(request.UserId, request.ProductId);
+                await _hubContext.Clients.All.SendAsync("CartUpdated", request.UserId);
+                return Ok("Product removed from personal cart");
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error removing product from cart", error = ex.Message });
+        }
     }
 
     [HttpDelete("clearCart")]
-    public async Task<IActionResult> ClearCart([FromBody] string userId)
+    public async Task<IActionResult> ClearCart([FromBody] CartClearRequestDTO request)
     {
-        await _productService.ClearCartAsync(userId);
-        await _hubContext.Clients.All.SendAsync("CartUpdated", userId);
-        return Ok("Cart cleared");
+        try
+        {
+            if (request.PartyId.HasValue)
+            {
+                await _productService.ClearCartAsync(request.UserId);
+                await _hubContext.Clients.Group(request.PartyId.Value.ToString()).SendAsync("PartyCartUpdated", request.PartyId.Value);
+                return Ok("Party cart cleared");
+            }
+            else
+            {
+                await _productService.ClearCartAsync(request.UserId);
+                await _hubContext.Clients.All.SendAsync("CartUpdated", request.UserId);
+                return Ok("Personal cart cleared");
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error clearing cart", error = ex.Message });
+        }
     }
 }
