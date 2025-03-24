@@ -87,7 +87,7 @@ public class PartyService : IPartyService
 
         if (!exists) 
         {
-            Console.WriteLine($"Party with ID {partyId} does not exist in Redis.[[__[_[_[__[_[_[_[_[");
+            Console.WriteLine($"Party with ID {partyId} does not exist in Redis.");
             return false;
         }
 
