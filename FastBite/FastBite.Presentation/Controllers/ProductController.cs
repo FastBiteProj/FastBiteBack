@@ -89,4 +89,18 @@ public class ProductController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    [HttpGet("tags")]
+    public async Task<IActionResult> GetAllTags()
+    {
+        try
+        {
+            var tags = await _productService.GetAllProductTagsAsync();
+            return Ok(tags);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"InternalServerError: {ex.Message}");
+        }
+    }
 }

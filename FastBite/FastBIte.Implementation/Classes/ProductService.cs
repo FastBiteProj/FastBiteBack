@@ -37,9 +37,11 @@ public class ProductService : IProductService
 
     public async Task<List<ProductDTO>> GetAllProductsAsync()
     {
-        var res = await _context.Products.Include(p => p.Category)
-        .Include(p => p.Translations)
-        .ToListAsync(); 
+        var res = await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Translations)
+            .Include(p => p.ProductTags)
+            .ToListAsync(); 
         return mapper.Map<List<ProductDTO>>(res);
     }
 
@@ -82,11 +84,6 @@ public class ProductService : IProductService
         return products;
     }
     
-    
-
-
-    
-    
     public async Task RemoveProductFromCartAsync(string userId, Guid productId)
     { 
         string cartKey = $"cart:{userId}";
@@ -128,7 +125,8 @@ public class ProductService : IProductService
                 Price = productDto.Price,
                 CategoryId = category.Id,
                 ImageUrl = productDto.ImageUrl,
-                Translations = new List<ProductTranslation>()
+                Translations = new List<ProductTranslation>(),
+                ProductTags = new List<ProductTag>()
             };
 
             foreach (var translationDto in productDto.Translations)
@@ -143,8 +141,35 @@ public class ProductService : IProductService
                 product.Translations.Add(translation);
             }
 
+            if (productDto.ProductTags != null)
+            {
+                foreach (var tagDto in productDto.ProductTags)
+                {
+                    var tag = await _context.ProductTags
+                        .FirstOrDefaultAsync(t => t.Name == tagDto.Name, cancellationToken);
+                    
+                    if (tag == null)
+                    {
+                        tag = new ProductTag
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = tagDto.Name
+                        };
+                        _context.ProductTags.Add(tag);
+                    }
+                    
+                    product.ProductTags.Add(tag);
+                }
+            }
+
             _context.Products.Add(product);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
+
+            product = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Translations)
+                .Include(p => p.ProductTags)
+                .FirstAsync(p => p.Id == product.Id, cancellationToken);
 
             return mapper.Map<ProductDTO>(product);
         }
@@ -260,5 +285,14 @@ public class ProductService : IProductService
         {
             return new PostResponse($"Error updating product: {ex.Message}", 500);
         }
+    }
+
+    public async Task<List<ProductTagDTO>> GetAllProductTagsAsync()
+    {
+        var tags = await _context.ProductTags
+            .OrderBy(t => t.Name) 
+            .ToListAsync();
+        
+        return tags.Select(t => new ProductTagDTO(t.Name)).ToList();
     }
 }

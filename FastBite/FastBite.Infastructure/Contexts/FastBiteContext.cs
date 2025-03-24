@@ -16,6 +16,7 @@ public class FastBiteContext : DbContext
     public DbSet<Category> Categories { get; set; }
     public DbSet<AppRole> AppRoles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
+    public DbSet<ProductTag> ProductTags { get; set; }
 
     public FastBiteContext()
     {
@@ -129,6 +130,10 @@ public class FastBiteContext : DbContext
                 .WithOne(t => t.Product)
                 .HasForeignKey(t => t.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(p => p.ProductTags)
+                .WithMany(pt => pt.Products)
+                .UsingEntity(j => j.ToTable("ProductTags_Product"));
         });
 
         modelBuilder.Entity<ProductTranslation>(entity => 
@@ -203,6 +208,16 @@ public class FastBiteContext : DbContext
             entity.HasOne(ur => ur.AppRole)
                 .WithMany(ar => ar.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
+        });
+
+        modelBuilder.Entity<ProductTag>(entity =>
+        {
+            entity.HasKey(pt => pt.Id);
+            entity.Property(pt => pt.Name).IsRequired().HasMaxLength(100);
+
+            entity.HasMany(pt => pt.Products)
+                .WithMany(p => p.ProductTags)
+                .UsingEntity(j => j.ToTable("ProductTags_Product"));
         });
     }
 }

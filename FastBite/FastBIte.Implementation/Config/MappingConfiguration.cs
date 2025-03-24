@@ -134,26 +134,23 @@ namespace FastBite.Implementation.Configs
                                 t.LanguageCode,
                                 t.Name,
                                 t.Description)).ToList()
-                            : new List<ProductTranslationDto>()))
+                            : new List<ProductTranslationDto>(),
+                        src.ProductTags != null
+                            ? src.ProductTags.Select(t => new ProductTagDTO(t.Name)).ToList()
+                            : new List<ProductTagDTO>()))
                     .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                     .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
                     .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
                     .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
-                    .ForMember(dest => dest.Translations, opt => opt.MapFrom(src => src.Translations.Select(t => new ProductTranslationDto(
-                        t.LanguageCode,
-                        t.Name,
-                        t.Description)).ToList()))
+                    .ForMember(dest => dest.Translations, opt => opt.MapFrom(src => src.Translations))
+                    .ForMember(dest => dest.ProductTags, opt => opt.MapFrom(src => src.ProductTags))
                     .ReverseMap()
                     .ForMember(dest => dest.Id, opt => opt.Ignore())
                     .ForMember(dest => dest.Category, opt => opt.Ignore())
                     .ForMember(dest => dest.CategoryId, opt => opt.Ignore())
                     .ForMember(dest => dest.OrderItems, opt => opt.Ignore())
-                    .ForMember(dest => dest.Translations, opt => opt.MapFrom(dest => dest.Translations.Select(t => new ProductTranslation
-                    {
-                        LanguageCode = t.LanguageCode,
-                        Name = t.Name,
-                        Description = t.Description
-                    }).ToList()));
+                    .ForMember(dest => dest.ProductTags, opt => opt.Ignore())
+                    .ForMember(dest => dest.Translations, opt => opt.MapFrom(dest => dest.Translations));
 
                 cfg.CreateMap<ProductTranslation, ProductTranslationDto>()
                     .ConstructUsing(src => new ProductTranslationDto(
@@ -173,6 +170,12 @@ namespace FastBite.Implementation.Configs
                         src.Name
                     ))
                     .ReverseMap()
+                    .ForMember(dest => dest.Products, opt => opt.Ignore());
+
+                cfg.CreateMap<ProductTag, ProductTagDTO>()
+                    .ConstructUsing(src => new ProductTagDTO(src.Name))
+                    .ReverseMap()
+                    .ForMember(dest => dest.Id, opt => opt.Ignore())
                     .ForMember(dest => dest.Products, opt => opt.Ignore());
             });
 
