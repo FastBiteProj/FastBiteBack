@@ -45,7 +45,7 @@ public class AccountService : IAccountService
         var link = $"http://localhost:5156/api/v1/Account/ValidateConfirmation?token={confirmationToken}";
 
         
-        StringBuilder sb = new( File.ReadAllText("/Users/mrknsol/Documents/FastBite0/FastBite-FastBite/FastBite/assets/email.html"));
+        StringBuilder sb = new( File.ReadAllText("/Users/mrknsol/Documents/FastBiteBack/FastBite/FastBite.Implementation/assets/codepage.html"));
         
         sb.Replace("[Confirmation Link]", link);
         sb.Replace("[Year]", DateTime.Now.Year.ToString());
@@ -71,7 +71,7 @@ public class AccountService : IAccountService
 
         await context.SaveChangesAsync();
 
-        StringBuilder sb = new StringBuilder(File.ReadAllText("/Users/mrknsol/Documents/FastBite//FastBite/FastBite/assets/codepage.html"));
+        StringBuilder sb = new StringBuilder(File.ReadAllText("/Users/mrknsol/Documents/FastBiteBack/FastBite/FastBite.Implementation/assets/codepage.html"));
         sb.Replace("[Verification Code]", verificationCode);
         sb.Replace("[Year]", DateTime.Now.Year.ToString());
         sb.Replace("[Recipient's Name]", user.Email);
