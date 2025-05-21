@@ -1,35 +1,57 @@
-using FastBite.Core.Models;
+using FastBite.Shared.DTOS;
 using Microsoft.ML;
+using Microsoft.ML.Data;
+using System.IO;
 
-namespace FastBite.Implementation.Classes;
+namespace FastBite.ML;
 
 public class MLModelTrainer
 {
-    private static readonly string ModelPath = "MLModel.zip";
-    private MLContext _mlContext;
-    private ITransformer _model;
+    private readonly string _categoryModelPath = "MLModels/CategoryModel.zip";
+    private readonly string _tagModelPath = "MLModels/ProductTagModel.zip";
 
-    public MLModelTrainer(MLContext mlContext)
+    private readonly MLContext _mlContext;
+
+    public MLModelTrainer()
     {
-        _mlContext = mlContext;
+        _mlContext = new MLContext();
     }
 
-    public string Predict(string userInput, List<Product> products)
+    public void TrainAndSaveModels(IEnumerable<TrainingData> trainingData)
     {
-        var tagList = products.SelectMany(p => p.ProductTags).Distinct().ToList();
-         var bestMatch = tagList
-            .FirstOrDefault(tagName =>
-                userInput.IndexOf(tagName.Name, StringComparison.OrdinalIgnoreCase) >= 0);
-
-        
-        return bestMatch?.Name ?? "Не нашел подходящих продуктов.";
+        TrainCategoryModel(trainingData);
+        TrainTagModel(trainingData);
     }
 
-    private void LoadModel()
+    private void TrainCategoryModel(IEnumerable<TrainingData> data)
     {
-        if (File.Exists(ModelPath))
-        {
-            _model = _mlContext.Model.Load(ModelPath, out _);
-        }
+        var dataView = _mlContext.Data.LoadFromEnumerable(data);
+
+        var pipeline = _mlContext.Transforms.Text.FeaturizeText("UserInputFeaturized", nameof(TrainingData.UserInput))
+            .Append(_mlContext.Transforms.Conversion.MapValueToKey("Label", nameof(TrainingData.Category)))
+            .Append(_mlContext.Transforms.Concatenate("Features", "UserInputFeaturized"))
+            .Append(_mlContext.MulticlassClassification.Trainers.SdcaMaximumEntropy())
+            .Append(_mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
+
+        var model = pipeline.Fit(dataView);
+
+        Directory.CreateDirectory("MLModels");
+        _mlContext.Model.Save(model, dataView.Schema, _categoryModelPath);
+    }
+
+    private void TrainTagModel(IEnumerable<TrainingData> data)
+    {
+        var dataView = _mlContext.Data.LoadFromEnumerable(data);
+
+        var pipeline = _mlContext.Transforms.Text.FeaturizeText("UserInputFeaturized", nameof(TrainingData.UserInput))
+            .Append(_mlContext.Transforms.Conversion.MapValueToKey("Label", nameof(TrainingData.ProductTag)))
+            .Append(_mlContext.Transforms.Concatenate("Features", "UserInputFeaturized"))
+            .Append(_mlContext.MulticlassClassification.Trainers.SdcaMaximumEntropy())
+            .Append(_mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
+
+        var model = pipeline.Fit(dataView);
+
+        Directory.CreateDirectory("MLModels");
+        _mlContext.Model.Save(model, dataView.Schema, _tagModelPath);
     }
 }

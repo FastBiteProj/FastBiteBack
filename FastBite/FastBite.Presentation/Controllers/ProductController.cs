@@ -103,4 +103,19 @@ public class ProductController : ControllerBase
             return StatusCode(500, $"InternalServerError: {ex.Message}");
         }
     }
+
+    [Authorize(Roles = "AppAdmin")]
+    [HttpPost("tags")]
+    public async Task<IActionResult> CreateTag([FromBody] List<ProductTagTranslationDTO> translations)
+    {
+        try
+        {
+            var tag = await _productService.CreateTagAsync(translations);
+            return Ok(tag);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"InternalServerError: {ex.Message}");
+        }
+    }
 }

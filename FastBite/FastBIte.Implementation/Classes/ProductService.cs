@@ -41,6 +41,7 @@ public class ProductService : IProductService
             .Include(p => p.Category)
             .Include(p => p.Translations)
             .Include(p => p.ProductTags)
+            .ThenInclude(pt => pt.Translations)
             .ToListAsync(); 
         return mapper.Map<List<ProductDTO>>(res);
     }
@@ -72,8 +73,11 @@ public class ProductService : IProductService
     
         foreach (var productId in productIds)
         {
-            var product = await _context.Products.Include(p => p.Category)
+            var product = await _context.Products
+                .Include(p => p.Category)
                 .Include(p => p.Translations)
+                .Include(p => p.ProductTags)
+                .ThenInclude(pt => pt.Translations)
                 .FirstOrDefaultAsync(p => p.Id == Guid.Parse(productId));
             if (product != null)
             {
@@ -145,15 +149,28 @@ public class ProductService : IProductService
             {
                 foreach (var tagDto in productDto.ProductTags)
                 {
+                    var englishTranslation = tagDto.Translations.FirstOrDefault(t => t.LanguageCode == "en");
+                    if (englishTranslation == null)
+                    {
+                        throw new Exception("Each tag must have an English translation");
+                    }
+
                     var tag = await _context.ProductTags
-                        .FirstOrDefaultAsync(t => t.Name == tagDto.Name, cancellationToken);
+                        .Include(t => t.Translations)
+                        .FirstOrDefaultAsync(t => t.Translations
+                            .Any(tr => tr.LanguageCode == "en" && tr.Name == englishTranslation.Name), 
+                            cancellationToken);
                     
                     if (tag == null)
                     {
                         tag = new ProductTag
                         {
                             Id = Guid.NewGuid(),
-                            Name = tagDto.Name
+                            Translations = tagDto.Translations.Select(t => new ProductTagTranslation
+                            {
+                                LanguageCode = t.LanguageCode,
+                                Name = t.Name
+                            }).ToList()
                         };
                         _context.ProductTags.Add(tag);
                     }
@@ -169,6 +186,7 @@ public class ProductService : IProductService
                 .Include(p => p.Category)
                 .Include(p => p.Translations)
                 .Include(p => p.ProductTags)
+                .ThenInclude(pt => pt.Translations)
                 .FirstAsync(p => p.Id == product.Id, cancellationToken);
 
             return mapper.Map<ProductDTO>(product);
@@ -259,6 +277,8 @@ public class ProductService : IProductService
         {
             var product = await _context.Products
                 .Include(p => p.Translations)
+                .Include(p => p.ProductTags)
+                .ThenInclude(pt => pt.Translations)
                 .FirstOrDefaultAsync(p => p.Translations
                     .Any(t => t.LanguageCode == "en" && t.Name == productName));
 
@@ -269,13 +289,39 @@ public class ProductService : IProductService
 
             product.Price = updatedProductDto.Price;
 
-            var englishTranslation = product.Translations
-                .FirstOrDefault(t => t.LanguageCode == "en");
-
-            if (englishTranslation != null)
+            foreach (var translationDto in updatedProductDto.Translations)
             {
-                englishTranslation.Name = updatedProductDto.Translations
-                    .First(t => t.LanguageCode == "en").Name;
+                var translation = product.Translations
+                    .FirstOrDefault(t => t.LanguageCode == translationDto.LanguageCode);
+
+                if (translation != null)
+                {
+                    translation.Name = translationDto.Name;
+                    translation.Description = translationDto.Description;
+                }
+            }
+
+            product.ProductTags.Clear();
+            if (updatedProductDto.ProductTags != null)
+            {
+                foreach (var tagDto in updatedProductDto.ProductTags)
+                {
+                    var englishTranslation = tagDto.Translations.FirstOrDefault(t => t.LanguageCode == "en");
+                    if (englishTranslation == null)
+                    {
+                        continue;
+                    }
+
+                    var tag = await _context.ProductTags
+                        .Include(t => t.Translations)
+                        .FirstOrDefaultAsync(t => t.Translations
+                            .Any(tr => tr.LanguageCode == "en" && tr.Name == englishTranslation.Name));
+
+                    if (tag != null)
+                    {
+                        product.ProductTags.Add(tag);
+                    }
+                }
             }
 
             await _context.SaveChangesAsync();
@@ -290,9 +336,28 @@ public class ProductService : IProductService
     public async Task<List<ProductTagDTO>> GetAllProductTagsAsync()
     {
         var tags = await _context.ProductTags
-            .OrderBy(t => t.Name) 
+            .Include(t => t.Translations)
             .ToListAsync();
         
-        return tags.Select(t => new ProductTagDTO(t.Name)).ToList();
+        return mapper.Map<List<ProductTagDTO>>(tags);
     }
+
+    public async Task<ProductTagDTO> CreateTagAsync(List<ProductTagTranslationDTO> translations)
+    {
+        var tag = new ProductTag
+        {
+            Id = Guid.NewGuid(),
+            Translations = translations.Select(t => new ProductTagTranslation
+            {
+                LanguageCode = t.LanguageCode,
+                Name = t.Name
+            }).ToList()
+        };
+
+        _context.ProductTags.Add(tag);
+        await _context.SaveChangesAsync();
+
+        return mapper.Map<ProductTagDTO>(tag);
+    }
+
 }

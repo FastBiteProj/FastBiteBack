@@ -1,5 +1,6 @@
 namespace FastBite.Shared.DTOS;
 
-public record ProductTagDTO (
-    string Name
-    );
+public record ProductTagDTO(
+    Guid Id,
+    List<ProductTagTranslationDTO> Translations
+);

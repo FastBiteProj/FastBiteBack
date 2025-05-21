@@ -164,7 +164,7 @@ public class AuthService : IAuthService
             newRefreshToken,
             DateTime.Now.AddMinutes(5),
             userRole.AppRole.Name,
-            cartProducts // Добавляем корзину в DTO
+            cartProducts 
         );
     }
 

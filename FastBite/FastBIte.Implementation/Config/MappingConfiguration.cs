@@ -136,7 +136,13 @@ namespace FastBite.Implementation.Configs
                                 t.Description)).ToList()
                             : new List<ProductTranslationDto>(),
                         src.ProductTags != null
-                            ? src.ProductTags.Select(t => new ProductTagDTO(t.Name)).ToList()
+                            ? src.ProductTags.Select(t => new ProductTagDTO(
+                                t.Id,
+                                t.Translations.Select(tr => new ProductTagTranslationDTO(
+                                    tr.LanguageCode,
+                                    tr.Name
+                                )).ToList()
+                            )).ToList()
                             : new List<ProductTagDTO>()))
                     .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                     .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
@@ -173,10 +179,27 @@ namespace FastBite.Implementation.Configs
                     .ForMember(dest => dest.Products, opt => opt.Ignore());
 
                 cfg.CreateMap<ProductTag, ProductTagDTO>()
-                    .ConstructUsing(src => new ProductTagDTO(src.Name))
+                    .ConstructUsing(src => new ProductTagDTO(
+                        src.Id,
+                        src.Translations != null 
+                            ? src.Translations.Select(t => new ProductTagTranslationDTO(
+                                t.LanguageCode,
+                                t.Name
+                            )).ToList()
+                            : new List<ProductTagTranslationDTO>()
+                    ))
+                    .ReverseMap()
+                    .ForMember(dest => dest.Products, opt => opt.Ignore());
+
+                cfg.CreateMap<ProductTagTranslation, ProductTagTranslationDTO>()
+                    .ConstructUsing(src => new ProductTagTranslationDTO(
+                        src.LanguageCode,
+                        src.Name ?? "Unknown Tag"
+                    ))
                     .ReverseMap()
                     .ForMember(dest => dest.Id, opt => opt.Ignore())
-                    .ForMember(dest => dest.Products, opt => opt.Ignore());
+                    .ForMember(dest => dest.ProductTag, opt => opt.Ignore())
+                    .ForMember(dest => dest.ProductTagId, opt => opt.Ignore());
             });
 
             mapperConfig.AssertConfigurationIsValid();

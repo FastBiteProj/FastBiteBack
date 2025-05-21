@@ -17,6 +17,7 @@ public class FastBiteContext : DbContext
     public DbSet<AppRole> AppRoles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
     public DbSet<ProductTag> ProductTags { get; set; }
+    public DbSet<ProductTagTranslation> ProductTagTranslations { get; set; }
 
     public FastBiteContext()
     {
@@ -133,7 +134,7 @@ public class FastBiteContext : DbContext
 
             entity.HasMany(p => p.ProductTags)
                 .WithMany(pt => pt.Products)
-                .UsingEntity(j => j.ToTable("ProductTags_Product"));
+                .UsingEntity(j => j.ToTable("ProductTags_Products"));
         });
 
         modelBuilder.Entity<ProductTranslation>(entity => 
@@ -213,11 +214,22 @@ public class FastBiteContext : DbContext
         modelBuilder.Entity<ProductTag>(entity =>
         {
             entity.HasKey(pt => pt.Id);
-            entity.Property(pt => pt.Name).IsRequired().HasMaxLength(100);
 
             entity.HasMany(pt => pt.Products)
                 .WithMany(p => p.ProductTags)
-                .UsingEntity(j => j.ToTable("ProductTags_Product"));
+                .UsingEntity(j => j.ToTable("ProductTags_Products"));
+
+            entity.HasMany(pt => pt.Translations)
+                .WithOne(t => t.ProductTag)
+                .HasForeignKey(t => t.ProductTagId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProductTagTranslation>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.LanguageCode).IsRequired();
+            entity.Property(t => t.Name).IsRequired().HasMaxLength(100);
         });
     }
 }

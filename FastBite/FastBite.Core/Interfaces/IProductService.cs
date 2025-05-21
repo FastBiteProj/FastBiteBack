@@ -15,4 +15,5 @@ public interface IProductService
     Task<string> UploadImageAsync(IFormFile file, CancellationToken cancellationToken);
     Task<PostResponse> DeleteProductAsync(string productName);
     Task<PostResponse> UpdateProductAsync(string productName, ProductDTO updatedProductDto);
+    Task<ProductTagDTO> CreateTagAsync(List<ProductTagTranslationDTO> translations);
 }
