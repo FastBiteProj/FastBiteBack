@@ -26,19 +26,21 @@ public class ChatController : ControllerBase
         var prediction = _predictor.Predict(input.UserInput);
 
         var matchedProducts = await _dbContext.Products
-        .Include(p => p.Category)
-        .Include(p => p.ProductTags)
-            .ThenInclude(pt => pt.Translations)
-        .Where(p =>
-            p.Category.Name == prediction.PredictedCategory &&
-            p.ProductTags.Any(pt =>
-                pt.Translations.Any(t =>
-                    prediction.PredictedTag.Contains(t.Name))))
-        .ToListAsync();
+            .Include(p => p.Category)
+            .Include(p => p.ProductTags)
+                .ThenInclude(pt => pt.Translations)
+            .Where(p => p.Category.Name == prediction.Category)
+            .Where(p => prediction.Tags.All(tag =>
+                p.ProductTags.Any(pt =>
+                    pt.Translations.Any(t =>
+                        EF.Functions.Like(t.Name, tag, "\\_")))))
+            .ToListAsync();
 
         return Ok(new
         {
             message = "Вот что я нашёл для вас",
+            category = prediction.Category,
+            tags = prediction.Tags,
             products = matchedProducts
         });
     }

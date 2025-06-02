@@ -71,8 +71,8 @@ namespace FastBite.Implementation.Classes
                     },
                     application_context = new
                     {
-                        return_url = "https://yourdomain.com/return",
-                        cancel_url = "https://yourdomain.com/cancel"
+                        return_url = "https://fastbite.com/return",
+                        cancel_url = "https://fastbite.com/cancel"
                     }
                 };
 

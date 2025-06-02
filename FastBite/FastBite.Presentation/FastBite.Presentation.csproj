@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CsvHelper" Version="30.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.7" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
         <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
@@ -26,6 +27,7 @@
         </PackageReference>
         <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+        <PackageReference Include="System.Globalization" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -39,5 +41,11 @@
       <ProjectReference Include="..\FastBIte.Implementation\FastBIte.Implementation.csproj" />
       <ProjectReference Include="..\FastBite.Shared\FastBite.Shared.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <None Update="MLModels\*.csv">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+   </ItemGroup>
+
 
 </Project>
