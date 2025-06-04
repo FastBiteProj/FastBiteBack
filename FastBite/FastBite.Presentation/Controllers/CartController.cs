@@ -26,7 +26,7 @@ public class CartController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Внутренняя ошибка сервера", ex });
+            return StatusCode(500, new { message = "Internal Server Error", ex });
         }
     }
     

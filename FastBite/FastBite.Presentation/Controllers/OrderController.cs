@@ -22,7 +22,6 @@ namespace FastBite.Controllers
         [HttpPost("Create")]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDTO orderDTO)
         {
-            Console.WriteLine("Order!!!!2`1`1`2`312312312414-----");
             try
             {
                 var order = await _orderService.CreateOrderAsync(orderDTO);
