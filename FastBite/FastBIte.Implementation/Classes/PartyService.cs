@@ -26,18 +26,21 @@ public class PartyService : IPartyService
 
     public async Task<Guid> CreatePartyAsync(Guid ownerId, int tableId)
     {
-        // Check if there's already a party for this table
         var allKeys = _redis.Multiplexer.GetServer(_redis.Multiplexer.GetEndPoints()[0]).Keys();
-        foreach (var i in allKeys)
+        foreach (var key in allKeys)
         {
-            var partyData = await _redisService.GetAsync<PartyDTO>(Guid.Parse(i.ToString()));
-            if (partyData != null && partyData.TableId == tableId)
+            var strKey = key.ToString();
+            if (Guid.TryParse(strKey, out var parsedGuid))
             {
-                throw new Exception($"Table {tableId} already has an active party");
+                var partyData = await _redisService.GetAsync<PartyDTO>(parsedGuid);
+                if (partyData != null && partyData.TableId == tableId)
+                {
+                    throw new Exception($"Table {tableId} already has an active party");
+                }
             }
         }
 
-        Guid partyId = Guid.NewGuid();
+        var partyId = Guid.NewGuid();
         var newPartyData = new PartyDTO
         {
             PartyId = partyId,
@@ -46,11 +49,9 @@ public class PartyService : IPartyService
             MemberIds = new List<Guid> { ownerId }
         };
 
-        string key = $"{partyId}";
-        string jsonData = JsonSerializer.Serialize(newPartyData);
-    
-        await _redis.StringSetAsync(key, jsonData);
-        
+        var jsonData = JsonSerializer.Serialize(newPartyData);
+        await _redis.StringSetAsync(partyId.ToString(), jsonData); // ✅ Ключ с дефисами
+
         return partyId;
     }
 
@@ -59,23 +60,21 @@ public class PartyService : IPartyService
         var keys = _redis.Multiplexer.GetServer(_redis.Multiplexer.GetEndPoints()[0]).Keys();
         var matchingKey = keys.FirstOrDefault(key => key.ToString().Contains(partyCode));
 
-        var partyId = Guid.Parse(matchingKey.ToString());
+        if (matchingKey.ToString() == null)
+            throw new Exception("Invalid party code");
+
+        if (!Guid.TryParse(matchingKey.ToString(), out var partyId))
+            throw new Exception("Party ID format is invalid");
 
         var partyData = await _redisService.GetAsync<PartyDTO>(partyId);
         if (partyData == null)
-        {
             throw new Exception("Party not found");
-        }
 
         if (partyData.MemberIds.Contains(userId))
-        {
-            throw new Exception("You cannot join this party, You already there"); 
-        }
+            throw new Exception("You are already in this party");
 
         partyData.MemberIds.Add(userId);
-
-        string jsonData = JsonSerializer.Serialize(partyData);
-        await _redis.StringSetAsync(partyId.ToString(), jsonData);
+        await _redis.StringSetAsync(partyId.ToString(), JsonSerializer.Serialize(partyData));
 
         return partyCode;
     }
