@@ -1,7 +1,6 @@
 # Compiled binary files
 bin/
 
-appsettings.json
 obj/
 
 # User-specific files
@@ -55,7 +54,9 @@ app.publish/
 Migrations/
 
 # Secrets and configurations
+# Secrets and configurations
 secrets.json
+appsettings.json
 appsettings.Development.json
 appsettings.Local.json
 
