@@ -20,7 +20,7 @@ public class PartyController : ControllerBase
     [HttpPost("createParty")]
     public async Task<IActionResult> CreateParty([FromBody] PartyRequestDTO partyRequest)
     {
-        if (partyRequest.OwnerId == null || partyRequest.TableId <= 0)
+        if (partyRequest?.OwnerId == null || partyRequest.TableId <= 0)
         {
             return BadRequest("Owner id is required and cannot be empty or Table Id is invalid");
         }
@@ -39,15 +39,15 @@ public class PartyController : ControllerBase
     [HttpPost("joinParty")]
     public async Task<IActionResult> JoinParty([FromBody] JoinPartyRequestDTO joinPartyRequest)
     {
-        if (joinPartyRequest.PartyCode == null || joinPartyRequest.UserId == null)
+        if (joinPartyRequest?.PartyCode == null || joinPartyRequest?.UserId == null)
         {
-            return BadRequest("PartyId и UserId обязательны");
+            return BadRequest("PartyId и UserId are required");
         }
 
         var result = await _partyService.JoinPartyAsync(joinPartyRequest.PartyCode, joinPartyRequest.UserId);
         if (result == null)
         {
-            return BadRequest("Не удалось присоединиться к пати");
+            return BadRequest("Failed to join the party.");
         }
 
         return Ok(result);
@@ -66,7 +66,7 @@ public class PartyController : ControllerBase
         var party = await _partyService.GetPartyAsync(partyId);
         if (party == null)
         {
-            return NotFound(new { message = "Пати не найдена" });
+            return NotFound(new { message = "Party not found" });
         }
         return Ok(party);
     }
@@ -75,7 +75,7 @@ public class PartyController : ControllerBase
     public async Task<IActionResult> AddToPartyCart([FromBody] AddToPartyCartRequestDTO request)
     {
         await _partyService.AddProductToPartyCartAsync(request.PartyId, request.ProductId);
-        return Ok(new { message = "Продукт добавлен в общую корзину" });
+        return Ok(new { message = "Product added to party cart" });
     }
 
     [HttpGet("getPartyCart")]
@@ -88,14 +88,14 @@ public class PartyController : ControllerBase
     public async Task<IActionResult> RemoveFromPartyCart([FromBody] RemoveFromPartyCartDTO request)
     {
         await _partyService.RemoveProductFromPartyCartAsync(request.PartyId, request.ProductId);
-        return Ok(new { message = "Продукт удален из корзины пати" });
+        return Ok(new { message = "Product removed from party cart" });
     }
 
     [HttpPost("clearPartyCart")]
     public async Task<IActionResult> ClearPartyCart([FromBody] ClearPartyCartDTO request)
     {
         await _partyService.ClearPartyCartAsync(request.PartyId);
-        return Ok(new { message = "Корзина пати очищена" });
+        return Ok(new { message = "Party cart cleared" });
     }
 
 }

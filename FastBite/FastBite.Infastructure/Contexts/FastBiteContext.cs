@@ -16,16 +16,10 @@ public class FastBiteContext : DbContext
     public DbSet<Category> Categories { get; set; }
     public DbSet<AppRole> AppRoles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
-    public DbSet<ProductTag> ProductTags { get; set; }
-    public DbSet<ProductTagTranslation> ProductTagTranslations { get; set; }
 
-    public FastBiteContext()
-    {
-    }
+    public FastBiteContext() { }
 
-    public FastBiteContext(DbContextOptions<FastBiteContext> options) : base(options)
-    {
-    }
+    public FastBiteContext(DbContextOptions<FastBiteContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -72,18 +66,9 @@ public class FastBiteContext : DbContext
         {
             entity.HasKey(r => r.Id);
             entity.Property(r => r.Name).IsRequired().HasMaxLength(200);
-            //
-            // entity.HasMany(r => r.Tables)
-            //     .WithOne()
-            //     .OnDelete(DeleteBehavior.Cascade);
-            // entity.Property(r => r.Address).IsRequired().HasMaxLength(250);
-            // entity.HasMany(r => r.MenuItems)
-            //     .WithOne()
-            //     .OnDelete(DeleteBehavior.Cascade);
-            
         });
 
-       modelBuilder.Entity<Reservation>(entity =>
+        modelBuilder.Entity<Reservation>(entity =>
         {
             entity.HasKey(r => r.Id);
 
@@ -120,7 +105,7 @@ public class FastBiteContext : DbContext
         {
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Price).IsRequired();
-            entity.Property(p => p.ImageUrl).IsRequired().HasDefaultValue("https://fastbite.blob.core.windows.net/fastbite-productimages/noimage.jpg.webp");
+            entity.Property(p => p.ImageUrl).IsRequired().HasDefaultValue("https://fastbiteblob.blob.core.windows.net/fastbiteproductimages/product_picture_0_600_600.jpg");
 
             entity.HasOne(p => p.Category)
                 .WithMany(c => c.Products)
@@ -131,10 +116,6 @@ public class FastBiteContext : DbContext
                 .WithOne(t => t.Product)
                 .HasForeignKey(t => t.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(p => p.ProductTags)
-                .WithMany(pt => pt.Products)
-                .UsingEntity(j => j.ToTable("ProductTags_Products"));
         });
 
         modelBuilder.Entity<ProductTranslation>(entity => 
@@ -145,14 +126,11 @@ public class FastBiteContext : DbContext
             entity.Property(t => t.Description).HasMaxLength(500);
         });
 
-       modelBuilder.Entity<Order>(entity =>
+        modelBuilder.Entity<Order>(entity =>
         {
             entity.HasKey(o => o.Id);
             entity.Property(o => o.TotalPrice).IsRequired();
-
-            entity.Property(o => o.TableNumber)
-                .IsRequired()
-                .HasDefaultValue(0); 
+            entity.Property(o => o.TableNumber).IsRequired().HasDefaultValue(0); 
 
             entity.HasMany(o => o.OrderItems)
                 .WithOne()
@@ -168,7 +146,6 @@ public class FastBiteContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Quantity).IsRequired();
-            
             entity.Property(e => e.ProductId).IsRequired(false);
 
             entity.HasOne(e => e.Order)
@@ -209,27 +186,6 @@ public class FastBiteContext : DbContext
             entity.HasOne(ur => ur.AppRole)
                 .WithMany(ar => ar.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
-        });
-
-        modelBuilder.Entity<ProductTag>(entity =>
-        {
-            entity.HasKey(pt => pt.Id);
-
-            entity.HasMany(pt => pt.Products)
-                .WithMany(p => p.ProductTags)
-                .UsingEntity(j => j.ToTable("ProductTags_Products"));
-
-            entity.HasMany(pt => pt.Translations)
-                .WithOne(t => t.ProductTag)
-                .HasForeignKey(t => t.ProductTagId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<ProductTagTranslation>(entity =>
-        {
-            entity.HasKey(t => t.Id);
-            entity.Property(t => t.LanguageCode).IsRequired();
-            entity.Property(t => t.Name).IsRequired().HasMaxLength(100);
         });
     }
 }

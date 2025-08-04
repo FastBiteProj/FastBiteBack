@@ -19,7 +19,6 @@ using FastBite.Infastructure.Hubs;
 using FastBite.Presentation.Middlewares;
 using Microsoft.AspNetCore.SignalR;
 using StackExchange.Redis;
-using FastBite.ML;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -158,8 +157,6 @@ builder.Services.AddScoped<ResetPasswordValidator>();
 builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(builder.Configuration["Redis:RedisConnection"]));
 
 builder.Services.AddTransient<ITokenService, TokenService>();
-builder.Services.AddScoped<MLModelTrainer>();
-builder.Services.AddSingleton<MLModelPredictor>();
 builder.Services.AddTransient<IRecaptchaService, RecaptchaService>();
 builder.Services.AddTransient<ITableService, TableService>();
 builder.Services.AddTransient<ICheckoutService, CheckoutService>();
@@ -195,38 +192,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        Console.WriteLine("Initializing ML models...");
-        
-        var categoryPath = Path.Combine(Directory.GetCurrentDirectory(), "MLModels/category-training-data.csv");
-        var tagPath = Path.Combine(Directory.GetCurrentDirectory(), "MLModels/tag-training-data.csv");
-        
-        Console.WriteLine($"Category path: {categoryPath}");
-        Console.WriteLine($"Tag path: {tagPath}");
-        Console.WriteLine($"Category exists: {File.Exists(categoryPath)}");
-        Console.WriteLine($"Tag exists: {File.Exists(tagPath)}");
-
-        var trainer = services.GetRequiredService<MLModelTrainer>();
-        
-        if (!File.Exists(categoryPath))
-            throw new FileNotFoundException($"Category training file not found: {categoryPath}");
-        
-        if (!File.Exists(tagPath))
-            throw new FileNotFoundException($"Tag training file not found: {tagPath}");
-
-        trainer.TrainModels();
-        Console.WriteLine("ML models initialized successfully!");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"ML initialization failed: {ex}");
-        throw;
-    }
-}
 
 app.UseHttpsRedirection();
 app.UseRouting();

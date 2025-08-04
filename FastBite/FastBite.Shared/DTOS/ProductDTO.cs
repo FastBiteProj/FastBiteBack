@@ -6,7 +6,6 @@ namespace FastBite.Shared.DTOS
         string CategoryName,
         string ImageUrl,
         int Price,
-        List<ProductTranslationDto> Translations,
-        List<ProductTagDTO> ProductTags
+        List<ProductTranslationDto> Translations
         );
 }

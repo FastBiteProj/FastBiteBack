@@ -32,7 +32,7 @@ namespace FastBite.Controllers
 
                 token = token.ToString().Replace("Bearer ", "");
 
-                await accountService.ResetPaswordAsync(resetRequest, token);
+                await accountService.ResetPasswordAsync(resetRequest, token);
                 return Ok("Recovery link sent to your email");
             }
             catch (MyAuthException ex)

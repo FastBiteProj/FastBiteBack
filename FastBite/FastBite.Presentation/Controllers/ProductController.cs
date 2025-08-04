@@ -90,32 +90,4 @@ public class ProductController : ControllerBase
         }
     }
 
-    [HttpGet("tags")]
-    public async Task<IActionResult> GetAllTags()
-    {
-        try
-        {
-            var tags = await _productService.GetAllProductTagsAsync();
-            return Ok(tags);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"InternalServerError: {ex.Message}");
-        }
-    }
-
-    [Authorize(Roles = "AppAdmin")]
-    [HttpPost("tags")]
-    public async Task<IActionResult> CreateTag([FromBody] List<ProductTagTranslationDTO> translations)
-    {
-        try
-        {
-            var tag = await _productService.CreateTagAsync(translations);
-            return Ok(tag);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"InternalServerError: {ex.Message}");
-        }
-    }
 }

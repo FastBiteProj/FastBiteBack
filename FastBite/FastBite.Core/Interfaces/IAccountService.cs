@@ -4,7 +4,7 @@ namespace FastBite.Core.Interfaces;
 
 public interface IAccountService
 {
-    public Task ResetPaswordAsync(ResetPasswordDTO resetRequest, string token);
+    public Task ResetPasswordAsync(ResetPasswordDTO resetRequest, string token);
     public Task<UserInfoDTO> GetUserInfoAsync(string token);
     public Task SendVerificationCodeAsync(ForgotPasswordDTO forgotPasswordDTO);
     public Task ResetPasswordWithCodeAsync(ResetPasswordWithCodeDTO resetRequest);

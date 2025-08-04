@@ -18,6 +18,5 @@ namespace FastBite.Core.Models
         
         public ICollection<ProductTranslation> Translations { get; set; }
         
-        public ICollection<ProductTag> ProductTags { get; set; }
     }
 }

@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using FastBite.Infrastructure.Contexts;
-using FastBite.Shared.DTOS;
 using System.Text;
 using FastBite.Core.Models;
-using FastBite.Infrastructure.Contexts;
 
 namespace FastBite.Implementation.Classes;
 public static class Functions

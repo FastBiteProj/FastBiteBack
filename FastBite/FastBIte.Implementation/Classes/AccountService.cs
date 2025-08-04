@@ -166,7 +166,7 @@ public class AccountService : IAccountService
         }
     }
 
-    public async Task ResetPaswordAsync(ResetPasswordDTO resetRequest, string token)
+    public async Task ResetPasswordAsync(ResetPasswordDTO resetRequest, string token)
     {
         var principal = tokenService.GetPrincipalFromToken(token, validateLifetime: true);
 
