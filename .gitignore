@@ -1,5 +1,7 @@
 # Compiled binary files
 bin/
+
+appsettings.json
 obj/
 
 # User-specific files
