@@ -202,9 +202,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapHub<CartHub>("/orderHub");
-});
+app.MapHub<CartHub>("/orderHub");
+
 
 app.Run("http://localhost:5156");

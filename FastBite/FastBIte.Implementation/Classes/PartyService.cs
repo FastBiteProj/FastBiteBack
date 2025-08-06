@@ -2,8 +2,10 @@ using System.Text.Json;
 using AutoMapper;
 using FastBite.Core.Interfaces;
 using FastBite.Implementation.Configs;
+using FastBite.Infastructure.Hubs;
 using FastBite.Infrastructure.Contexts;
 using FastBite.Shared.DTOS;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 
@@ -15,13 +17,16 @@ public class PartyService : IPartyService
     private FastBiteContext _context;
     private IMapper _mapper;
     public IRedisService _redisService;
+    public IHubContext<CartHub> _hubContext;
+    
 
-    public PartyService(IConnectionMultiplexer redis, IRedisService redisService, FastBiteContext context)
+    public PartyService(IConnectionMultiplexer redis, IRedisService redisService, FastBiteContext context, IHubContext<CartHub> hubContext)
     {
         _redis = redis.GetDatabase();
         _redisService = redisService;
         _context = context;
         _mapper = MappingConfiguration.InitializeConfig();
+        _hubContext = hubContext;
     }
 
     public async Task<Guid> CreatePartyAsync(Guid ownerId, int tableId)
@@ -50,7 +55,7 @@ public class PartyService : IPartyService
         };
 
         var jsonData = JsonSerializer.Serialize(newPartyData);
-        await _redis.StringSetAsync(partyId.ToString(), jsonData); // ✅ Ключ с дефисами
+        await _redis.StringSetAsync(partyId.ToString(), jsonData);
 
         return partyId;
     }
@@ -133,8 +138,12 @@ public class PartyService : IPartyService
     public async Task AddProductToPartyCartAsync(Guid partyId, Guid productId)
     {
         var cartKey = $"party_cart:{partyId}";
+        
         await _redis.ListLeftPushAsync(cartKey, productId.ToString());
+        
         await _redis.KeyExpireAsync(cartKey, TimeSpan.FromMinutes(15));
+
+        await _hubContext.Clients.Group(partyId.ToString()).SendAsync("PartyCartUpdated", partyId);
     }
 
     public async Task<List<ProductDTO>> GetPartyCartAsync(Guid partyId)
