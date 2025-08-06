@@ -154,7 +154,7 @@ builder.Services.AddScoped<LoginUserValidator>();
 builder.Services.AddScoped<RegisterUserValidator>();
 builder.Services.AddScoped<ResetPasswordValidator>();
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(builder.Configuration["Redis:RedisConnection"]));
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(builder.Configuration["REDIS_CONNECTION_STRING"]));
 
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddTransient<IRecaptchaService, RecaptchaService>();
