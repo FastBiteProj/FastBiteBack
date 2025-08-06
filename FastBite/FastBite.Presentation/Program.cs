@@ -30,7 +30,7 @@ builder.Services.AddCors(options =>
             .WithOrigins(
                 "http://localhost:5173", 
                 "http://localhost:5174",
-                "https://fast-bite-front.vercel.app/"
+                "https://fast-bite-front.vercel.app"
             )
             .AllowAnyHeader() 
             .AllowAnyMethod() 
