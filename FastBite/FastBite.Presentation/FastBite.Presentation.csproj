@@ -40,7 +40,7 @@
       <ProjectReference Include="..\FastBite.Core\FastBite.Core.csproj" />
       <ProjectReference Include="..\FastBite.Shared\FastBite.Shared.csproj" />
       <ProjectReference Include="..\FastBite.Infastructure\FastBite.Infastructure.csproj" />
-      <ProjectReference Include="..\FastBite.Implementation\FastBite.Implementation.csproj" />
+      <ProjectReference Include="..\FastBIte.Implementation\FastBIte.Implementation.csproj" />
     </ItemGroup>
     <ItemGroup>
       <None Update="MLModels\*.csv">
