@@ -22,13 +22,16 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddCors(options => 
 { 
     options.AddPolicy("CorsPolicy", builder => 
     { 
         builder 
-            .WithOrigins("http://localhost:5173", "http://localhost:5174")
+            .WithOrigins(
+                "http://localhost:5173", 
+                "http://localhost:5174",
+                "https://your-frontend-domain.com" // замените на ваш production домен
+            )
             .AllowAnyHeader() 
             .AllowAnyMethod() 
             .AllowCredentials(); 
@@ -86,7 +89,10 @@ builder.Services.AddAuthentication(options =>
 
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
-                    var refreshEndpoint = $"http://localhost:5156/api/v1/Auth/Refresh";
+                    // Получаем базовый URL динамически
+                    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+                    var refreshEndpoint = $"{baseUrl}/api/v1/Auth/Refresh";
+                    
                     var client = httpContext.RequestServices.GetRequiredService<IHttpClientFactory>().CreateClient();
                     
                     var response = await client.PostAsJsonAsync(refreshEndpoint, new TokenDTO(accessToken, refreshToken));
@@ -142,7 +148,6 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
 builder.Services.AddDbContext<FastBiteContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
@@ -154,7 +159,34 @@ builder.Services.AddScoped<LoginUserValidator>();
 builder.Services.AddScoped<RegisterUserValidator>();
 builder.Services.AddScoped<ResetPasswordValidator>();
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(builder.Configuration["REDIS_CONNECTION_STRING"]));
+// Исправленная Redis конфигурация
+builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
+{
+    var redisConnectionString = builder.Configuration["Redis:RedisConnection"];
+    
+    if (string.IsNullOrEmpty(redisConnectionString))
+    {
+        throw new InvalidOperationException("Redis connection string is not configured.");
+    }
+
+    try
+    {
+        var configuration = ConfigurationOptions.Parse(redisConnectionString);
+        
+        // Настройки SSL и таймаутов для Redis Cloud
+        configuration.Ssl = true;
+        configuration.AbortOnConnectFail = false;
+        configuration.ConnectTimeout = 10000;
+        configuration.SyncTimeout = 10000;
+        configuration.AsyncTimeout = 10000;
+        
+        return ConnectionMultiplexer.Connect(configuration);
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException($"Failed to connect to Redis: {ex.Message}", ex);
+    }
+});
 
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddTransient<IRecaptchaService, RecaptchaService>();
@@ -192,7 +224,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseMiddleware<JwtSessionMiddleware>();
@@ -204,5 +235,5 @@ app.MapControllers();
 
 app.MapHub<CartHub>("/orderHub");
 
-
-app.Run("http://localhost:5156");
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5156";
+app.Run($"http://0.0.0.0:{port}");
