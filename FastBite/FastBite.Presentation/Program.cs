@@ -30,7 +30,7 @@ builder.Services.AddCors(options =>
             .WithOrigins(
                 "http://localhost:5173", 
                 "http://localhost:5174",
-                "https://your-frontend-domain.com" // замените на ваш production домен
+                "https://fast-bite-front.vercel.app/"
             )
             .AllowAnyHeader() 
             .AllowAnyMethod() 
@@ -159,7 +159,6 @@ builder.Services.AddScoped<LoginUserValidator>();
 builder.Services.AddScoped<RegisterUserValidator>();
 builder.Services.AddScoped<ResetPasswordValidator>();
 
-// Исправленная Redis конфигурация
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
 {
     var redisConnectionString = builder.Configuration["Redis:RedisConnection"];
@@ -173,7 +172,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
     {
         var configuration = ConfigurationOptions.Parse(redisConnectionString);
         
-        // Настройки SSL и таймаутов для Redis Cloud
         configuration.Ssl = true;
         configuration.AbortOnConnectFail = false;
         configuration.ConnectTimeout = 10000;
