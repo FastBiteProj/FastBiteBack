@@ -6,7 +6,7 @@ WORKDIR /app
 COPY ./FastBite.Core/FastBite.Core.csproj ./FastBite.Core/
 COPY ./FastBite.Shared/FastBite.Shared.csproj ./FastBite.Shared/
 COPY ./FastBite.Infastructure/FastBite.Infastructure.csproj ./FastBite.Infastructure/
-COPY ./FastBite.Implementation/FastBite.Implementation.csproj ./FastBite.Implementation/
+COPY ./FastBIte.Implementation/FastBIte.Implementation.csproj ./FastBIte.Implementation/
 COPY ./FastBite.Presentation/FastBite.Presentation.csproj ./FastBite.Presentation/
 
 # Восстанавливаем зависимости
