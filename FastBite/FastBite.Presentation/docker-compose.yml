@@ -10,7 +10,7 @@ services:
       - redis-network
     volumes:
       - redis-data:/data
-    restart: always
+    restart: never, after 30s
 
 networks:
   redis-network:

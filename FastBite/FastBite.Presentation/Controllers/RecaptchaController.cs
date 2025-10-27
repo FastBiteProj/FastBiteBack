@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
+
+namespace FastBite.Presentation.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 public class RecaptchaController : ControllerBase

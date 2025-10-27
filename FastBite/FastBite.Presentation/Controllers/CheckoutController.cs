@@ -2,7 +2,7 @@ using FastBite.Core.Interfaces;
 using FastBite.Shared.DTOS;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FastBite.Controllers;
+namespace FastBite.Presentation.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]

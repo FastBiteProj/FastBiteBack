@@ -3,7 +3,7 @@ using FastBite.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace FastBite.Controllers;
+namespace FastBite.Presentation.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 public class RestaurantController : ControllerBase

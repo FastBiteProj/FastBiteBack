@@ -89,7 +89,6 @@ builder.Services.AddAuthentication(options =>
 
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
-                    // Получаем базовый URL динамически
                     var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
                     var refreshEndpoint = $"{baseUrl}/api/v1/Auth/Refresh";
                     
@@ -155,36 +154,40 @@ builder.Services.AddDbContext<FastBiteContext>(options =>
 
 builder.Services.AddHttpClient();
 
+
 builder.Services.AddScoped<LoginUserValidator>();
 builder.Services.AddScoped<RegisterUserValidator>();
 builder.Services.AddScoped<ResetPasswordValidator>();
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
-{
-    var redisConnectionString = builder.Configuration["Redis:RedisConnection"];
+// builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
+// {
+//     var redisConnectionString = builder.Configuration["Redis:RedisConnection"];
     
-    if (string.IsNullOrEmpty(redisConnectionString))
-    {
-        throw new InvalidOperationException("Redis connection string is not configured.");
-    }
+//     if (string.IsNullOrEmpty(redisConnectionString))
+//     {
+//         throw new InvalidOperationException("Redis connection string is not configured.");
+//     }
 
-    try
-    {
-        var configuration = ConfigurationOptions.Parse(redisConnectionString);
+//     try
+//     {
+//         var configuration = ConfigurationOptions.Parse(redisConnectionString);
         
-        configuration.Ssl = true;
-        configuration.AbortOnConnectFail = false;
-        configuration.ConnectTimeout = 10000;
-        configuration.SyncTimeout = 10000;
-        configuration.AsyncTimeout = 10000;
+//         configuration.Ssl = true;
+//         configuration.AbortOnConnectFail = false;
+//         configuration.ConnectTimeout = 10000;
+//         configuration.SyncTimeout = 10000;
+//         configuration.AsyncTimeout = 10000;
         
-        return ConnectionMultiplexer.Connect(configuration);
-    }
-    catch (Exception ex)
-    {
-        throw new InvalidOperationException($"Failed to connect to Redis: {ex.Message}", ex);
-    }
-});
+//         return ConnectionMultiplexer.Connect(configuration);
+//     }
+//     catch (Exception ex)
+//     {
+//         throw new InvalidOperationException($"Failed to connect to Redis: {ex.Message}", ex);
+//     }
+// });
+
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(builder.Configuration["Redis:RedisConnection"]));
 
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddTransient<IRecaptchaService, RecaptchaService>();
@@ -233,5 +236,4 @@ app.MapControllers();
 
 app.MapHub<CartHub>("/orderHub");
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5156";
-app.Run($"http://0.0.0.0:{port}");
+app.Run();

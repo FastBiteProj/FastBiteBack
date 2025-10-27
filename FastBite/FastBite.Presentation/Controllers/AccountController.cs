@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FastBite.Implementation.Validators;
 
-namespace FastBite.Controllers
+namespace FastBite.Presentation.Controllers
 {
     [ApiController]
     [Route("api/v1/[controller]")]

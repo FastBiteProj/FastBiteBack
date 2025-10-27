@@ -4,6 +4,8 @@ using FastBite.Shared.DTOS;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
+namespace FastBite.Presentation.Controllers;
+
 [ApiController]
 [Route("api/v1/[controller]")]
 public class CartController : ControllerBase

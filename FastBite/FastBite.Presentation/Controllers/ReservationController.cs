@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 
-namespace FastBite.Controllers;
+namespace FastBite.PresentationControllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]

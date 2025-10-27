@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FastBite.Controllers
+namespace FastBite.Presentation.Controllers
 {
     [Authorize]
     [Route("api/[controller]")]

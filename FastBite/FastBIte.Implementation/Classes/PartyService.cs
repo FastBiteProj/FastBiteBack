@@ -40,6 +40,11 @@ public class PartyService : IPartyService
                 var partyData = await _redisService.GetAsync<PartyDTO>(parsedGuid);
                 if (partyData != null && partyData.TableId == tableId)
                 {
+                    if (partyData.MemberIds == null || !partyData.MemberIds.Any()) {
+                        await _redis.KeyDeleteAsync(parsedGuid.ToString());
+                        continue;
+                    }
+                    
                     throw new Exception($"Table {tableId} already has an active party");
                 }
             }

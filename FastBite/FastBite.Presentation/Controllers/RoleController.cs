@@ -4,7 +4,7 @@ using FastBite.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 
-namespace AuthApiService.Controllers;
+namespace FastBite.Presentation.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
