@@ -31,25 +31,39 @@ public class PartyService : IPartyService
 
     public async Task<Guid> CreatePartyAsync(Guid ownerId, int tableId)
     {
+        // var allKeys = _redis.Multiplexer.GetServer(_redis.Multiplexer.GetEndPoints()[0]).Keys();
+        // foreach (var key in allKeys)
+        // {
+        //     var strKey = key.ToString();
+        //     if (Guid.TryParse(strKey, out var parsedGuid))
+        //     {
+        //         var partyData = await _redisService.GetAsync<PartyDTO>(parsedGuid);
+        //         if (partyData != null && partyData.TableId == tableId)
+        //         {
+        //             if (partyData.MemberIds == null || !partyData.MemberIds.Any()) {
+        //                 await _redis.KeyDeleteAsync(parsedGuid.ToString());
+        //                 continue;
+        //             }
+                    
+        //             throw new Exception($"Table {tableId} already has an active party");
+        //         }
+        //     }
+        // }
         var allKeys = _redis.Multiplexer.GetServer(_redis.Multiplexer.GetEndPoints()[0]).Keys();
-        foreach (var key in allKeys)
-        {
+        
+        foreach (var key in allKeys) {
             var strKey = key.ToString();
-            if (Guid.TryParse(strKey, out var parsedGuid))
-            {
+            if (Guid.TryParse(strKey, out var parsedGuid)) {
                 var partyData = await _redisService.GetAsync<PartyDTO>(parsedGuid);
-                if (partyData != null && partyData.TableId == tableId)
-                {
+                if (partyData != null && partyData.TableId == tableId) {
                     if (partyData.MemberIds == null || !partyData.MemberIds.Any()) {
                         await _redis.KeyDeleteAsync(parsedGuid.ToString());
                         continue;
                     }
-                    
                     throw new Exception($"Table {tableId} already has an active party");
                 }
             }
         }
-
         var partyId = Guid.NewGuid();
         var newPartyData = new PartyDTO
         {

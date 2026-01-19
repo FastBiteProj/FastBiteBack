@@ -39,12 +39,14 @@ namespace FastBite.Implementation.Classes
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Ошибка при получении access token: {errorContent}");
+                    throw new Exception($"Error while getting access token: {errorContent}");
                 }
             }
 
             return accessToken;
         }
+
+        
 
         public async Task<string> CreateOrderAsync(string PayPalUrl, string accessToken, decimal amount, string currency)
         {

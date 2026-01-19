@@ -15,7 +15,8 @@ namespace FastBite.Core.Models
         public Guid UserId { get; set; }
 
         public User User { get; set; }
-        
+
         public int TableNumber { get; set; }
+
     }
 }
