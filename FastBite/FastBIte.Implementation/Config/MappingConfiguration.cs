@@ -75,7 +75,7 @@ namespace FastBite.Implementation.Configs
 
                 cfg.CreateMap<Order, CreateOrderDTO>()
                     .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                    .ForMember(dest => dest.ProductNames, opt => opt.MapFrom(src =>
+                    .ForMember(dest => dest.Products, opt => opt.MapFrom(src =>
                         src.OrderItems != null ? src.OrderItems.Select(oi =>
                             new OrderProductDTO(
                                 oi.Product.Translations.FirstOrDefault(t => t.LanguageCode == "en") != null

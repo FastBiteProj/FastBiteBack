@@ -68,7 +68,7 @@ public class ReservationService : IReservationService
         }
 
         Guid? orderId = null;
-        if (reservation.Order != null && reservation.Order.ProductNames != null && reservation.Order.ProductNames.Any(p => !string.IsNullOrEmpty(p.ProductName) && p.ProductName != "string" && p.Quantity > 0))  
+        if (reservation.Order != null && reservation.Order.Products != null && reservation.Order.Products.Any(p => !string.IsNullOrEmpty(p.ProductName) && p.ProductName != "string" && p.Quantity > 0))  
         {
             var order = await _orderService.CreateOrderAsync(reservation.Order);
             Console.WriteLine("-------------_________-------------____________-------------reservation");

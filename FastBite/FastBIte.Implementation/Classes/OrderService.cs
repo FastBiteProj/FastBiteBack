@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
+using FastBite.Shared.Enum;
 
 namespace FastBite.Implementation.Classes
 {
@@ -32,23 +33,37 @@ namespace FastBite.Implementation.Classes
 
        public async Task<CreateOrderDTO> CreateOrderAsync(CreateOrderDTO orderDTO)
         {
-            if (orderDTO.ProductNames == null || !orderDTO.ProductNames.Any())
+            var existingOrder = await _context.Orders
+                .FirstOrDefaultAsync(o => 
+                    o.TableNumber == orderDTO.TableNumber && 
+                    o.Status != OrderStatus.Paid && 
+                    o.Status != OrderStatus.Cancelled);
+            
+            if (existingOrder != null)
+            {
+                throw new InvalidOperationException($"Table {orderDTO.TableNumber} already has an active order (ID: {existingOrder.Id})");
+            }
+            
+            if (orderDTO.Products == null || !orderDTO.Products.Any())
             {
                 throw new ArgumentException("You need to add at least one product.");
             }
-
-            var productNames = orderDTO.ProductNames.Select(p => p.ProductName).ToList();
-
+            
+            var productNames = orderDTO.Products
+                .Select(p => p.ProductName)
+                .Distinct()
+                .ToList();
+            
             var products = await _context.Products
                 .Include(p => p.Translations)
                 .Where(p => p.Translations.Any(t => productNames.Contains(t.Name)))
                 .ToListAsync();
-
+            
             if (products.Count != productNames.Count)
             {
                 throw new ArgumentException("One or more products not found.");
             }
-
+            
             var order = new Order
             {
                 Id = Guid.NewGuid(),
@@ -56,32 +71,33 @@ namespace FastBite.Implementation.Classes
                 TotalPrice = 0,
                 OrderItems = new List<OrderItem>(),
                 ConfirmationDate = DateTime.Now,
-                TableNumber = orderDTO.TableNumber
+                TableNumber = orderDTO.TableNumber,
+                Status = OrderStatus.Created 
             };
-
-            foreach (var item in orderDTO.ProductNames)
+            
+            foreach (var item in orderDTO.Products)
             {
-                var product = products.FirstOrDefault(p => p.Translations.Any(t => t.Name == item.ProductName));
+                var product = products.FirstOrDefault(p => 
+                    p.Translations.Any(t => t.Name == item.ProductName));
+                
                 if (product == null)
                 {
                     throw new ArgumentException($"Product '{item.ProductName}' not found.");
                 }
-
+                
                 var orderItem = new OrderItem
                 {
                     ProductId = product.Id,
                     Quantity = item.Quantity,
                     Order = order
                 };
-
+                
                 order.OrderItems.Add(orderItem);
-
                 order.TotalPrice += product.Price * item.Quantity;
             }
-
+            
             try
             {
-                Console.WriteLine("_________________________Creating Order At OrderService");
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
             }
@@ -89,9 +105,96 @@ namespace FastBite.Implementation.Classes
             {
                 throw new Exception("Could not create order.", ex);
             }
-
+            
             var orderDTOResult = _mapper.Map<CreateOrderDTO>(order);
             return orderDTOResult;
+        }
+
+        public async Task<OrderReceiptDTO> TryLockAndPayOrderAsync(Guid orderId, OrderStatus newStatus, string languageCode)
+        {
+            var order = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                        .ThenInclude(p => p.Translations)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+            
+            if (order == null)
+            {
+                throw new Exception("Order not found.");
+            }
+            
+            if (order.Status == OrderStatus.Paid)
+            {
+                return BuildReceipt(order);
+            }
+
+            if (order.Status == OrderStatus.Cancelled)
+            {
+                throw new InvalidOperationException("Order is cancelled.");
+            }
+            
+            if (order.Status == OrderStatus.Cancelled)
+            {
+                throw new InvalidOperationException("Order is cancelled and cannot be paid.");
+            }
+            
+            var originalRowVersion = order.RowVersion;
+            
+            try
+            {
+                order.Status = newStatus;
+                _context.Entry(order).Property(x => x.RowVersion).OriginalValue = originalRowVersion;
+                
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new InvalidOperationException("Order was modified by another user. Please try again.");
+            }
+            
+            var receipt = new OrderReceiptDTO
+            {
+                OrderId = order.Id,
+                TableNumber = order.TableNumber,
+                ConfirmationDate = order.ConfirmationDate,
+                TotalPrice = order.TotalPrice,
+                Items = order.OrderItems.Select(oi =>
+                {
+                    var translation = oi.Product.Translations
+                        .FirstOrDefault(t => t.LanguageCode == languageCode)
+                        ?? oi.Product.Translations.FirstOrDefault();
+
+                    return new OrderReceiptItemDTO
+                    {
+                        ProductName = translation?.Name ?? "Unknown",
+                        Quantity = oi.Quantity,
+                        Price = oi.Product.Price,
+                    };
+                }).ToList()
+            };
+
+            return receipt;
+        }
+
+        public async Task<CreateOrderDTO> CancelOrderAsync(Guid orderId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                        .ThenInclude(p => p.Translations)
+                .FirstOrDefaultAsync(o => o.Id == orderId)
+                ?? throw new Exception("Order not found.");
+
+            if (order.Status == OrderStatus.Paid)
+                throw new InvalidOperationException("Paid order cannot be cancelled.");
+
+            order.Status = OrderStatus.PaymentCancelled;
+
+            await _context.SaveChangesAsync();
+            return _mapper.Map<CreateOrderDTO>(order);
         }
 
 
@@ -189,6 +292,24 @@ namespace FastBite.Implementation.Classes
             {
                 throw new Exception("Could not delete order.", ex);
             }
+        }
+
+        private static OrderReceiptDTO BuildReceipt(Order order)
+        {
+            return new OrderReceiptDTO
+            {
+                OrderId = order.Id,
+                TableNumber = order.TableNumber,
+                ConfirmationDate = order.ConfirmationDate,
+                TotalPrice = order.TotalPrice,
+                Items = order.OrderItems.Select(oi => new OrderReceiptItemDTO
+                {
+                    ProductName =
+                        oi.Product.Translations.FirstOrDefault()?.Name ?? "Unknown",
+                    Quantity = oi.Quantity,
+                    Price = oi.Product.Price
+                }).ToList()
+            };
         }
     }
 }
