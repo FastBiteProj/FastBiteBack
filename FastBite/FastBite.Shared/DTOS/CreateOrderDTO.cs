@@ -1,3 +1,5 @@
+using FastBite.Shared.Enum;
+
 namespace FastBite.Shared.DTOS
 {
     public record CreateOrderDTO
@@ -7,6 +9,7 @@ namespace FastBite.Shared.DTOS
         Guid UserId,
         int TotalPrice,
         int TableNumber,
-        DateTime ConfirmationDate
+        DateTime ConfirmationDate,
+        OrderStatus Status
     );
 }

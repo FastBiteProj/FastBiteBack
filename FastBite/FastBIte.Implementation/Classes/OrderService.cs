@@ -177,6 +177,20 @@ namespace FastBite.Implementation.Classes
             return receipt;
         }
 
+        public async Task<OrderReceiptDTO> GetActiveOrderAsync(Guid userId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                        .ThenInclude(p => p.Translations)
+                .FirstOrDefaultAsync(o => o.UserId == userId && o.Status == OrderStatus.Created);
+
+            if (order == null)
+                return null;
+
+            return await TryLockAndPayOrderAsync(order.Id, order.Status, "en");
+        }
+
         public async Task<CreateOrderDTO> CancelOrderAsync(Guid orderId)
         {
             var order = await _context.Orders
@@ -253,6 +267,9 @@ namespace FastBite.Implementation.Classes
         {
             var order = await _context.Orders
                 .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                        .ThenInclude(p => p.Translations)
+                .Include(o => o.User)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
             if (order == null)

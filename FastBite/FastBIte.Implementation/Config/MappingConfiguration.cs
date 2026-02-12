@@ -55,7 +55,8 @@ namespace FastBite.Implementation.Configs
                             src.Order.UserId,
                             src.Order.TotalPrice,
                             src.Order.TableNumber,
-                            src.Order.ConfirmationDate) : null
+                            src.Order.ConfirmationDate,
+                            src.Order.Status) : null
                     ))
                     .ForMember(dest => dest.ReservationStartTime, opt => opt.MapFrom(src => src.ReservationStart))
                     .ForMember(dest => dest.ReservationEndTime, opt => opt.MapFrom(src => src.ReservationEnd))
@@ -71,6 +72,7 @@ namespace FastBite.Implementation.Configs
                     .ForMember(dest => dest.User, opt => opt.Ignore())
                     .ForMember(dest => dest.TableId, opt => opt.Ignore())
                     .ForMember(dest => dest.OrderId, opt => opt.Ignore())
+                    
                     .ForMember(dest => dest.ConfirmationDate, opt => opt.Ignore());
 
                 cfg.CreateMap<Order, CreateOrderDTO>()
@@ -97,7 +99,8 @@ namespace FastBite.Implementation.Configs
                         o.UserId,
                         o.TotalPrice,
                         o.TableNumber,
-                        o.ConfirmationDate))
+                        o.ConfirmationDate,
+                        o.Status))
                     .ReverseMap();
 
                 cfg.CreateMap<OrderItem, OrderProductDTO>()

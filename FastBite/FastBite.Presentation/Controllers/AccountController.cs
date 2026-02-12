@@ -91,7 +91,11 @@ namespace FastBite.Presentation.Controllers
             }
             catch (MyAuthException ex)
             {
-                return BadRequest($"{ex.Message}\n{ex.AuthErrorType}");
+                return BadRequest(new
+                    {
+                        message = "Something went wrong. Please try again later.",
+                        code = ex.AuthErrorType
+                    });
             }
         }
         [HttpPost("ResetPasswordWithCode")]

@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using FastBite.Core.Interfaces;
 using Newtonsoft.Json;
@@ -99,31 +100,43 @@ namespace FastBite.Implementation.Classes
             return orderId;
         }
 
-        public async Task<string> CaptureOrderAsync(string PayPalUrl, string accessToken, string orderId)
+        public async Task<string> CaptureOrderAsync(
+            string payPalUrl,
+            string accessToken,
+            string orderId)
         {
-            string captureId = "";
+            using var client = new HttpClient();
 
-            string url = $"{PayPalUrl}/v2/checkout/orders/{orderId}/capture";
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", accessToken);
 
-                var response = await client.PostAsync(url, null);
+            client.DefaultRequestHeaders.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseContent);
-                    captureId = jsonResponse["purchase_units"][0]["payments"]["captures"][0]["id"].ToString();
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Error while capturing order: {errorContent}");
-                }
-            }
+            var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"{payPalUrl}/v2/checkout/orders/{orderId}/capture"
+            );
 
-            return captureId;
+            request.Content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+            var response = await client.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"Error while capturing order: {responseContent}");
+
+            using var json = JsonDocument.Parse(responseContent);
+
+            return json
+                .RootElement
+                .GetProperty("purchase_units")[0]
+                .GetProperty("payments")
+                .GetProperty("captures")[0]
+                .GetProperty("id")
+                .GetString();
         }
+
+        
     }
 }

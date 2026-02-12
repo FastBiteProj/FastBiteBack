@@ -67,21 +67,18 @@ namespace FastBite.Presentation.Controllers
                         {
                             status = "Paid",
                             method = request.PaymentMethod,
-                            receipt
+                            order = new
+                            {
+                                items = receipt.Items.Select(i => new
+                                {
+                                    name = i.ProductName,
+                                    quantity = i.Quantity,
+                                    price = i.Price
+                                }),
+                                totalPrice = receipt.TotalPrice
+                            }
                         });
                     }
-                    case "paypal":
-                        var lockedOrder = await _orderService.TryLockAndPayOrderAsync(request.OrderId, OrderStatus.PaymentPending, request.Language);
-
-                        var accessToken = await _checkoutService.GetPayPalAccessTokenAsync(PayPalUrl, PayPalClientId, PayPalSecret);
-                        var paypalOrderId = await _checkoutService.CreateOrderAsync(PayPalUrl, accessToken, request.Amount, request.Currency);
-
-                        return Ok(new
-                        {
-                            PayPalOrderId = paypalOrderId,
-                            Order = lockedOrder
-                        });
-
                     default:
                         return BadRequest("Unknown payment method");
                 }
@@ -109,24 +106,44 @@ namespace FastBite.Presentation.Controllers
         [HttpPost("CapturePayPal")]
         public async Task<IActionResult> CapturePayPal([FromBody] PayPalCaptureRequestDTO request)
         {
-            try
+            var accessToken = await _checkoutService.GetPayPalAccessTokenAsync(
+                PayPalUrl, PayPalClientId, PayPalSecret);
+
+            var captureId = await _checkoutService.CaptureOrderAsync(
+                PayPalUrl, accessToken, request.PayPalOrderId);
+
+            var orderDto = await _orderService.TryLockAndPayOrderAsync(
+                request.OrderId,
+                OrderStatus.Paid,
+                request.Language
+            );
+
+            return Ok(new
             {
-                var accessToken = await _checkoutService.GetPayPalAccessTokenAsync(PayPalUrl, PayPalClientId, PayPalSecret);
-                var captureId = await _checkoutService.CaptureOrderAsync(PayPalUrl, accessToken, request.PayPalOrderId);
-
-                var orderDto = await _orderService.TryLockAndPayOrderAsync(request.OrderId, OrderStatus.PaymentPending, request.Language);
-
-                return Ok(new
+                CaptureId = captureId,
+                Status = "Paid",
+                order = new
                 {
-                    CaptureId = captureId,
-                    Status = "Paid",
-                    Order = orderDto
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Error = ex.Message });
-            }
+                    items = orderDto.Items.Select(i => new
+                    {
+                        name = i.ProductName,
+                        quantity = i.Quantity,
+                        price = i.Price
+                    }),
+                    totalPrice = orderDto.TotalPrice
+                }
+            });
+        }
+
+        [HttpGet("ActiveOrder")]
+        public async Task<IActionResult> GetActiveOrder([FromBody] Guid userId)
+        {
+            var order = await _orderService.GetActiveOrderAsync(userId);
+
+            if (order == null)
+                return NotFound();
+
+            return Ok(order);
         }
     }
 }
